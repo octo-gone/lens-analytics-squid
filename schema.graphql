@@ -1,0 +1,100 @@
+type Block @entity {
+    id: ID!
+    number: Int! @index
+    timestamp: DateTime! @index
+}
+
+type Transaction @entity {
+    id: ID!
+    blockNumber: Int @index
+    blockTimestamp: DateTime! @index
+    hash: String! @index
+    to: String @index
+    from: String @index
+    status: Int @index
+}
+
+type LensEventProfileCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    creator: String! @index
+    to: String! @index
+    handle: String!
+    imageUri: String!
+    followModule: String!
+    followModuleReturnData: String!
+    followNfturi: String!
+    timestamp: BigInt!
+}
+
+type LensEventProfileImageUriSet @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    imageUri: String!
+    timestamp: BigInt!
+}
+
+type LensEventPostCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    contentUri: String!
+    collectModule: String!
+    collectModuleReturnData: String!
+    referenceModule: String!
+    referenceModuleReturnData: String!
+    timestamp: BigInt!
+}
+
+type LensEventCommentCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    contentUri: String!
+    profileIdPointed: BigInt!
+    pubIdPointed: BigInt!
+    referenceModuleData: String!
+    collectModule: String!
+    collectModuleReturnData: String!
+    referenceModule: String!
+    referenceModuleReturnData: String!
+    timestamp: BigInt!
+}
+
+type LensEventMirrorCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    profileIdPointed: BigInt!
+    pubIdPointed: BigInt!
+    referenceModuleData: String!
+    referenceModule: String!
+    referenceModuleReturnData: String!
+    timestamp: BigInt!
+}
+
