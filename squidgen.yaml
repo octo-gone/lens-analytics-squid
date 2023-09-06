@@ -5,10 +5,5 @@ contracts:
   - name: Lens
     address: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d"
     abi: ./assets/Lens.json
-    events:
-      - ProfileCreated
-      - ProfileImageURISet
-      - PostCreated
-      - CommentCreated
-      - MirrorCreated
+    events: true
 etherscanApi: https://api.polygonscan.com

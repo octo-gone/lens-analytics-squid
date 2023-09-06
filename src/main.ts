@@ -1,8 +1,8 @@
 import {lens} from './mapping'
-import {processor} from './processor'
-import {db, Store} from './db'
+import {processor, lensProtocolAddress} from './processor'
+import {db} from './db'
 import {EntityBuffer} from './entityBuffer'
-import {Block, Transaction} from './model'
+import {Block} from './model'
 
 processor.run(db, async (ctx) => {
     for (let block of ctx.blocks) {
@@ -15,27 +15,9 @@ processor.run(db, async (ctx) => {
         )
 
         for (let log of block.logs) {
-            if (log.address === '0xdb46d1dc155634fbc732f92e853b10b288ad5a1d') {
+            if (log.address === lensProtocolAddress) {
                 lens.parseEvent(ctx, log)
             }
-        }
-
-        for (let transaction of block.transactions) {
-            if (transaction.to === '0xdb46d1dc155634fbc732f92e853b10b288ad5a1d') {
-                lens.parseFunction(ctx, transaction)
-            }
-
-            EntityBuffer.add(
-                new Transaction({
-                    id: transaction.id,
-                    blockNumber: block.header.height,
-                    blockTimestamp: new Date(block.header.timestamp),
-                    hash: transaction.hash,
-                    to: transaction.to,
-                    from: transaction.from,
-                    status: transaction.status,
-                })
-            )
         }
     }
 

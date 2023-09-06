@@ -4,14 +4,87 @@ type Block @entity {
     timestamp: DateTime! @index
 }
 
-type Transaction @entity {
+type LensEventCollected @entity {
     id: ID!
-    blockNumber: Int @index
+    blockNumber: Int! @index
     blockTimestamp: DateTime! @index
-    hash: String! @index
-    to: String @index
-    from: String @index
-    status: Int @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    collector: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    rootProfileId: BigInt!
+    rootPubId: BigInt!
+    collectModuleData: String!
+    timestamp: BigInt!
+}
+
+type LensEventCommentCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    contentUri: String!
+    profileIdPointed: BigInt!
+    pubIdPointed: BigInt!
+    referenceModuleData: String!
+    collectModule: String!
+    collectModuleReturnData: String!
+    referenceModule: String!
+    referenceModuleReturnData: String!
+    timestamp: BigInt!
+}
+
+type LensEventFollowed @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    follower: String! @index
+    profileIds: JSON!
+    followModuleDatas: JSON!
+    timestamp: BigInt!
+}
+
+type LensEventMirrorCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    profileIdPointed: BigInt!
+    pubIdPointed: BigInt!
+    referenceModuleData: String!
+    referenceModule: String!
+    referenceModuleReturnData: String!
+    timestamp: BigInt!
+}
+
+type LensEventPostCreated @entity {
+    id: ID!
+    blockNumber: Int! @index
+    blockTimestamp: DateTime! @index
+    transactionHash: String! @index
+    contract: String! @index
+    eventName: String! @index
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    contentUri: String!
+    collectModule: String!
+    collectModuleReturnData: String!
+    referenceModule: String!
+    referenceModuleReturnData: String!
+    timestamp: BigInt!
 }
 
 type LensEventProfileCreated @entity {
@@ -43,58 +116,3 @@ type LensEventProfileImageUriSet @entity {
     imageUri: String!
     timestamp: BigInt!
 }
-
-type LensEventPostCreated @entity {
-    id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    contentUri: String!
-    collectModule: String!
-    collectModuleReturnData: String!
-    referenceModule: String!
-    referenceModuleReturnData: String!
-    timestamp: BigInt!
-}
-
-type LensEventCommentCreated @entity {
-    id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    contentUri: String!
-    profileIdPointed: BigInt!
-    pubIdPointed: BigInt!
-    referenceModuleData: String!
-    collectModule: String!
-    collectModuleReturnData: String!
-    referenceModule: String!
-    referenceModuleReturnData: String!
-    timestamp: BigInt!
-}
-
-type LensEventMirrorCreated @entity {
-    id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    profileIdPointed: BigInt!
-    pubIdPointed: BigInt!
-    referenceModuleData: String!
-    referenceModule: String!
-    referenceModuleReturnData: String!
-    timestamp: BigInt!
-}
-
