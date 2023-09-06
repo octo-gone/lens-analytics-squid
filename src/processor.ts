@@ -24,6 +24,9 @@ export const processor = new EvmBatchProcessor()
             status: true,
         }
     })
+    .setBlockRange({
+        from: 28_000_000
+    })
     .addLog({
         address: [lensProtocolAddress],
         topic0: [

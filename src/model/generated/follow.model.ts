@@ -1,8 +1,8 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
 
 @Entity_()
-export class Block {
-    constructor(props?: Partial<Block>) {
+export class Follow {
+    constructor(props?: Partial<Follow>) {
         Object.assign(this, props)
     }
 
@@ -10,8 +10,11 @@ export class Block {
     id!: string
 
     @Index_()
-    @Column_("int4", {nullable: false})
-    number!: number
+    @Column_("text", {nullable: false})
+    follower!: string
+
+    @Column_("jsonb", {nullable: false})
+    profileIds!: unknown
 
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})

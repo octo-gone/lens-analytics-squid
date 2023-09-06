@@ -1,118 +1,52 @@
-type Block @entity {
+type Profile @entity {
     id: ID!
-    number: Int! @index
+    profileId: BigInt! @index
+    address: String! @index
+    handle: String! @index
+    imageUri: String!
     timestamp: DateTime! @index
 }
 
-type LensEventCollected @entity {
+type Collect @entity {
     id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
     collector: String! @index
     profileId: BigInt! @index
     pubId: BigInt! @index
-    rootProfileId: BigInt!
-    rootPubId: BigInt!
-    collectModuleData: String!
-    timestamp: BigInt!
+    rootProfileId: BigInt! @index
+    rootPubId: BigInt! @index
+    timestamp: DateTime! @index
 }
 
-type LensEventCommentCreated @entity {
+type Comment @entity {
     id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
     profileId: BigInt! @index
     pubId: BigInt! @index
     contentUri: String!
-    profileIdPointed: BigInt!
-    pubIdPointed: BigInt!
-    referenceModuleData: String!
-    collectModule: String!
-    collectModuleReturnData: String!
-    referenceModule: String!
-    referenceModuleReturnData: String!
-    timestamp: BigInt!
+    profileIdPointed: BigInt! @index
+    pubIdPointed: BigInt! @index
+    timestamp: DateTime! @index
 }
 
-type LensEventFollowed @entity {
+type Follow @entity {
     id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
     follower: String! @index
     profileIds: JSON!
-    followModuleDatas: JSON!
-    timestamp: BigInt!
+    timestamp: DateTime! @index
 }
 
-type LensEventMirrorCreated @entity {
+type Mirror @entity {
     id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
     profileId: BigInt! @index
     pubId: BigInt! @index
-    profileIdPointed: BigInt!
-    pubIdPointed: BigInt!
-    referenceModuleData: String!
-    referenceModule: String!
-    referenceModuleReturnData: String!
-    timestamp: BigInt!
+    profileIdPointed: BigInt! @index
+    pubIdPointed: BigInt! @index
+    timestamp: DateTime! @index
 }
 
-type LensEventPostCreated @entity {
+type Post @entity {
     id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
     profileId: BigInt! @index
     pubId: BigInt! @index
     contentUri: String!
-    collectModule: String!
-    collectModuleReturnData: String!
-    referenceModule: String!
-    referenceModuleReturnData: String!
-    timestamp: BigInt!
-}
-
-type LensEventProfileCreated @entity {
-    id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
-    profileId: BigInt! @index
-    creator: String! @index
-    to: String! @index
-    handle: String!
-    imageUri: String!
-    followModule: String!
-    followModuleReturnData: String!
-    followNfturi: String!
-    timestamp: BigInt!
-}
-
-type LensEventProfileImageUriSet @entity {
-    id: ID!
-    blockNumber: Int! @index
-    blockTimestamp: DateTime! @index
-    transactionHash: String! @index
-    contract: String! @index
-    eventName: String! @index
-    profileId: BigInt! @index
-    imageUri: String!
-    timestamp: BigInt!
+    timestamp: DateTime! @index
 }
