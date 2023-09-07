@@ -1,5 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
+import {Profile} from "./profile.model"
 
 @Entity_()
 export class Post {
@@ -12,11 +13,15 @@ export class Post {
 
     @Index_()
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    profileId!: bigint
+    pubId!: bigint
 
     @Index_()
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    pubId!: bigint
+    profileId!: bigint
+
+    @Index_()
+    @ManyToOne_(() => Profile, {nullable: true})
+    creator!: Profile
 
     @Column_("text", {nullable: false})
     contentUri!: string

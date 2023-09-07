@@ -1,5 +1,6 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
+import {Post} from "./post.model"
 
 @Entity_()
 export class Profile {
@@ -10,7 +11,6 @@ export class Profile {
     @PrimaryColumn_()
     id!: string
 
-    @Index_()
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     profileId!: bigint
 
@@ -25,7 +25,14 @@ export class Profile {
     @Column_("text", {nullable: false})
     imageUri!: string
 
+    @OneToMany_(() => Post, e => e.creator)
+    posts!: Post[]
+
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})
-    timestamp!: Date
+    createdAt!: Date
+
+    @Index_()
+    @Column_("timestamp with time zone", {nullable: false})
+    updatedAt!: Date
 }

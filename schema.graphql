@@ -4,7 +4,9 @@ type Profile @entity {
     address: String! @index
     handle: String! @index
     imageUri: String!
-    timestamp: DateTime! @index
+    posts: [Post!] @derivedFrom(field: "creator")
+    createdAt: DateTime! @index
+    updatedAt: DateTime! @index
 }
 
 type Collect @entity {
@@ -45,8 +47,9 @@ type Mirror @entity {
 
 type Post @entity {
     id: ID!
-    profileId: BigInt! @index
     pubId: BigInt! @index
+    profileId: BigInt! @index
+    creator: Profile! @index
     contentUri: String!
     timestamp: DateTime! @index
 }

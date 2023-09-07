@@ -1,12 +1,17 @@
-module.exports = class Data1694020956512 {
-    name = 'Data1694020956512'
+module.exports = class Data1694106222756 {
+    name = 'Data1694106222756'
 
     async up(db) {
-        await db.query(`CREATE TABLE "profile" ("id" character varying NOT NULL, "profile_id" numeric NOT NULL, "address" text NOT NULL, "handle" text NOT NULL, "image_uri" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_3dd8bfc97e4a77c70971591bdcb" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE INDEX "IDX_b0465dda30314a8786db3354a6" ON "profile" ("profile_id") `)
+        await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "pub_id" numeric NOT NULL, "profile_id" numeric NOT NULL, "content_uri" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "creator_id" character varying, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_df9f973a1a260ba107d09a4e66" ON "post" ("pub_id") `)
+        await db.query(`CREATE INDEX "IDX_d71267a40b11eac9c6b2dee901" ON "post" ("profile_id") `)
+        await db.query(`CREATE INDEX "IDX_cdb7a69f6107ba4227908d6ed5" ON "post" ("creator_id") `)
+        await db.query(`CREATE INDEX "IDX_1f469063a68c898f81186c0c11" ON "post" ("timestamp") `)
+        await db.query(`CREATE TABLE "profile" ("id" character varying NOT NULL, "profile_id" numeric NOT NULL, "address" text NOT NULL, "handle" text NOT NULL, "image_uri" text NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL, "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_3dd8bfc97e4a77c70971591bdcb" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_486591528fda0f35f22560c47f" ON "profile" ("address") `)
         await db.query(`CREATE INDEX "IDX_e1eea55c5dc00feee13279e4cc" ON "profile" ("handle") `)
-        await db.query(`CREATE INDEX "IDX_8fa96ed7b90e90f8b6dceb289b" ON "profile" ("timestamp") `)
+        await db.query(`CREATE INDEX "IDX_0ed669a723a2a49942d30301a0" ON "profile" ("created_at") `)
+        await db.query(`CREATE INDEX "IDX_1ba9ea99166dd36c702f512930" ON "profile" ("updated_at") `)
         await db.query(`CREATE TABLE "collect" ("id" character varying NOT NULL, "collector" text NOT NULL, "profile_id" numeric NOT NULL, "pub_id" numeric NOT NULL, "root_profile_id" numeric NOT NULL, "root_pub_id" numeric NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_48dc0a6d1738eb0ee8f1e13d3d1" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_92cbba0a224e935d8a1ddca3e1" ON "collect" ("collector") `)
         await db.query(`CREATE INDEX "IDX_6f7aead7081c4815876262112b" ON "collect" ("profile_id") `)
@@ -29,18 +34,20 @@ module.exports = class Data1694020956512 {
         await db.query(`CREATE INDEX "IDX_2387749a31393346971f1f5227" ON "mirror" ("profile_id_pointed") `)
         await db.query(`CREATE INDEX "IDX_599464f87e294c33e7ed8b77c0" ON "mirror" ("pub_id_pointed") `)
         await db.query(`CREATE INDEX "IDX_93c8d82a0f37539d183a846a07" ON "mirror" ("timestamp") `)
-        await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "profile_id" numeric NOT NULL, "pub_id" numeric NOT NULL, "content_uri" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE INDEX "IDX_d71267a40b11eac9c6b2dee901" ON "post" ("profile_id") `)
-        await db.query(`CREATE INDEX "IDX_df9f973a1a260ba107d09a4e66" ON "post" ("pub_id") `)
-        await db.query(`CREATE INDEX "IDX_1f469063a68c898f81186c0c11" ON "post" ("timestamp") `)
+        await db.query(`ALTER TABLE "post" ADD CONSTRAINT "FK_cdb7a69f6107ba4227908d6ed55" FOREIGN KEY ("creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     }
 
     async down(db) {
+        await db.query(`DROP TABLE "post"`)
+        await db.query(`DROP INDEX "public"."IDX_df9f973a1a260ba107d09a4e66"`)
+        await db.query(`DROP INDEX "public"."IDX_d71267a40b11eac9c6b2dee901"`)
+        await db.query(`DROP INDEX "public"."IDX_cdb7a69f6107ba4227908d6ed5"`)
+        await db.query(`DROP INDEX "public"."IDX_1f469063a68c898f81186c0c11"`)
         await db.query(`DROP TABLE "profile"`)
-        await db.query(`DROP INDEX "public"."IDX_b0465dda30314a8786db3354a6"`)
         await db.query(`DROP INDEX "public"."IDX_486591528fda0f35f22560c47f"`)
         await db.query(`DROP INDEX "public"."IDX_e1eea55c5dc00feee13279e4cc"`)
-        await db.query(`DROP INDEX "public"."IDX_8fa96ed7b90e90f8b6dceb289b"`)
+        await db.query(`DROP INDEX "public"."IDX_0ed669a723a2a49942d30301a0"`)
+        await db.query(`DROP INDEX "public"."IDX_1ba9ea99166dd36c702f512930"`)
         await db.query(`DROP TABLE "collect"`)
         await db.query(`DROP INDEX "public"."IDX_92cbba0a224e935d8a1ddca3e1"`)
         await db.query(`DROP INDEX "public"."IDX_6f7aead7081c4815876262112b"`)
@@ -63,9 +70,6 @@ module.exports = class Data1694020956512 {
         await db.query(`DROP INDEX "public"."IDX_2387749a31393346971f1f5227"`)
         await db.query(`DROP INDEX "public"."IDX_599464f87e294c33e7ed8b77c0"`)
         await db.query(`DROP INDEX "public"."IDX_93c8d82a0f37539d183a846a07"`)
-        await db.query(`DROP TABLE "post"`)
-        await db.query(`DROP INDEX "public"."IDX_d71267a40b11eac9c6b2dee901"`)
-        await db.query(`DROP INDEX "public"."IDX_df9f973a1a260ba107d09a4e66"`)
-        await db.query(`DROP INDEX "public"."IDX_1f469063a68c898f81186c0c11"`)
+        await db.query(`ALTER TABLE "post" DROP CONSTRAINT "FK_cdb7a69f6107ba4227908d6ed55"`)
     }
 }

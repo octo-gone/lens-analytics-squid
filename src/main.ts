@@ -11,8 +11,9 @@ processor.run(db, async (ctx) => {
             }
         }
     }
+    await lens.mergeData(ctx)
 
     for (let entities of EntityBuffer.flush()) {
-        await ctx.store.insert(entities)
+        await ctx.store.save(entities)
     }
 })
