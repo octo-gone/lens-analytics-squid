@@ -9,13 +9,21 @@ type Profile @entity {
     updatedAt: DateTime! @index
 }
 
-type Collect @entity {
+type Post @entity {
     id: ID!
-    collector: String! @index
+    pubId: BigInt! @index
+    profileId: BigInt! @index
+    creator: Profile! @index
+    contentUri: String!
+    timestamp: DateTime! @index
+}
+
+type Mirror @entity {
+    id: ID!
     profileId: BigInt! @index
     pubId: BigInt! @index
-    rootProfileId: BigInt! @index
-    rootPubId: BigInt! @index
+    profileIdPointed: BigInt! @index
+    pubIdPointed: BigInt! @index
     timestamp: DateTime! @index
 }
 
@@ -36,20 +44,12 @@ type Follow @entity {
     timestamp: DateTime! @index
 }
 
-type Mirror @entity {
+type Collect @entity {
     id: ID!
+    collector: String! @index
     profileId: BigInt! @index
     pubId: BigInt! @index
-    profileIdPointed: BigInt! @index
-    pubIdPointed: BigInt! @index
-    timestamp: DateTime! @index
-}
-
-type Post @entity {
-    id: ID!
-    pubId: BigInt! @index
-    profileId: BigInt! @index
-    creator: Profile! @index
-    contentUri: String!
+    rootProfileId: BigInt! @index
+    rootPubId: BigInt! @index
     timestamp: DateTime! @index
 }
