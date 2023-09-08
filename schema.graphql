@@ -4,15 +4,31 @@ type Profile @entity {
     address: String! @index
     handle: String! @index
     imageUri: String!
+    publications: [Publication!] @derivedFrom(field: "creator")
     posts: [Post!] @derivedFrom(field: "creator")
+    mirrors: [Mirror!] @derivedFrom(field: "creator")
+    comments: [Comment!] @derivedFrom(field: "creator")
     createdAt: DateTime! @index
     updatedAt: DateTime! @index
 }
 
+enum PublicationVariant {
+    POST, COMMENT, MIRROR
+}
+
+type Publication @entity {
+    id: ID!
+    profileId: BigInt! @index
+    pubId: BigInt! @index
+    creator: Profile! @index
+    variant: PublicationVariant!
+    timestamp: DateTime! @index
+}
+
 type Post @entity {
     id: ID!
-    pubId: BigInt! @index
     profileId: BigInt! @index
+    pubId: BigInt! @index
     creator: Profile! @index
     contentUri: String!
     timestamp: DateTime! @index
@@ -22,8 +38,10 @@ type Mirror @entity {
     id: ID!
     profileId: BigInt! @index
     pubId: BigInt! @index
+    creator: Profile! @index
     profileIdPointed: BigInt! @index
     pubIdPointed: BigInt! @index
+    creatorPointed: Profile! @index
     timestamp: DateTime! @index
 }
 
@@ -31,25 +49,30 @@ type Comment @entity {
     id: ID!
     profileId: BigInt! @index
     pubId: BigInt! @index
+    creator: Profile! @index
     contentUri: String!
     profileIdPointed: BigInt! @index
     pubIdPointed: BigInt! @index
-    timestamp: DateTime! @index
-}
-
-type Follow @entity {
-    id: ID!
-    follower: String! @index
-    profileIds: JSON!
+    creatorPointed: Profile! @index
     timestamp: DateTime! @index
 }
 
 type Collect @entity {
     id: ID!
-    collector: String! @index
+    collectorAddress: String! @index
+    collector: Profile @index
     profileId: BigInt! @index
     pubId: BigInt! @index
+    pubCreator: Profile! @index
     rootProfileId: BigInt! @index
     rootPubId: BigInt! @index
+    rootCreator: Profile! @index
+    timestamp: DateTime! @index
+}
+
+type Follow @entity {
+    id: ID!
+    followerAddress: String! @index
+    profileIds: JSON!
     timestamp: DateTime! @index
 }

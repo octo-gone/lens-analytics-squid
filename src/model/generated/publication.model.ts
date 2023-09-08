@@ -1,10 +1,11 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
 import {Profile} from "./profile.model"
+import {PublicationVariant} from "./_publicationVariant"
 
 @Entity_()
-export class Post {
-    constructor(props?: Partial<Post>) {
+export class Publication {
+    constructor(props?: Partial<Publication>) {
         Object.assign(this, props)
     }
 
@@ -23,8 +24,8 @@ export class Post {
     @ManyToOne_(() => Profile, {nullable: true})
     creator!: Profile
 
-    @Column_("text", {nullable: false})
-    contentUri!: string
+    @Column_("varchar", {length: 7, nullable: false})
+    variant!: PublicationVariant
 
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})

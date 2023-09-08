@@ -1,9 +1,6 @@
-export type ProfilePatchData = {
+export type ProfileImageUpdateData = {
     id: string;
     profileId: bigint;
-    address?: string;
-    handle?: string;
-    imageUri?: string;
-    createdAt?: Date;
+    imageUri: string;
     updatedAt: Date;
 }

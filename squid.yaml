@@ -1,6 +1,6 @@
 manifestVersion: subsquid.io/v0.1
 name: lens-protocol-analytics
-version: 3
+version: 4
 description: Lens Protocol Analytics squid
 build:
 deploy:

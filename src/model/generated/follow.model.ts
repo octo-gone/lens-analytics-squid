@@ -11,7 +11,7 @@ export class Follow {
 
     @Index_()
     @Column_("text", {nullable: false})
-    follower!: string
+    followerAddress!: string
 
     @Column_("jsonb", {nullable: false})
     profileIds!: unknown
