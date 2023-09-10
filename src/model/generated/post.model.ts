@@ -1,5 +1,6 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import * as marshal from "./marshal"
+import {Publication} from "./publication.model"
 import {Profile} from "./profile.model"
 
 @Entity_()
@@ -18,6 +19,10 @@ export class Post {
     @Index_()
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     pubId!: bigint
+
+    @Index_()
+    @ManyToOne_(() => Publication, {nullable: true})
+    publication!: Publication
 
     @Index_()
     @ManyToOne_(() => Profile, {nullable: true})

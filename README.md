@@ -11,7 +11,7 @@ Links:
 ## Squid
 
 Links:
- - [🦑 GraphQL API](https://squid.subsquid.io/lens-protocol-analytics/v/v3/graphql)
+ - [🦑 GraphQL API](https://squid.subsquid.io/lens-protocol-analytics/v/v5/graphql)
 
 ## Usage
 
