@@ -24,3 +24,7 @@ deploy:
       - '100'
       - '--dumb-cache-max-age'
       - '1000'
+      - '--max-root-fields'
+      - '10'
+      - '--max-response-size'
+      - '1000'

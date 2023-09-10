@@ -1,7 +1,8 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_, OneToMany as OneToMany_} from "typeorm"
 import * as marshal from "./marshal"
 import {Profile} from "./profile.model"
 import {PublicationVariant} from "./_publicationVariant"
+import {Collect} from "./collect.model"
 
 @Entity_()
 export class Publication {
@@ -26,6 +27,12 @@ export class Publication {
 
     @Column_("varchar", {length: 7, nullable: false})
     variant!: PublicationVariant
+
+    @OneToMany_(() => Collect, e => e.rootPublication)
+    rootCollects!: Collect[]
+
+    @OneToMany_(() => Collect, e => e.publication)
+    collects!: Collect[]
 
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})

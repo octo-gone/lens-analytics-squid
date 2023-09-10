@@ -8,6 +8,7 @@ type Profile @entity {
     posts: [Post!] @derivedFrom(field: "creator")
     mirrors: [Mirror!] @derivedFrom(field: "creator")
     comments: [Comment!] @derivedFrom(field: "creator")
+    collects: [Collect!] @derivedFrom(field: "collector")
     createdAt: DateTime! @index
     updatedAt: DateTime! @index
 }
@@ -22,6 +23,8 @@ type Publication @entity {
     pubId: BigInt! @index
     creator: Profile! @index
     variant: PublicationVariant!
+    rootCollects: [Collect!] @derivedFrom(field: "rootPublication")
+    collects: [Collect!] @derivedFrom(field: "publication")
     timestamp: DateTime! @index
 }
 
@@ -65,6 +68,8 @@ type Comment @entity {
 type Collect @entity {
     id: ID!
     collectorAddress: String! @index
+    collectorProfileId: BigInt @index
+    collector: Profile @index
     profileId: BigInt! @index
     pubId: BigInt! @index
     pubCreator: Profile! @index
@@ -79,6 +84,8 @@ type Collect @entity {
 type Follow @entity {
     id: ID!
     followerAddress: String! @index
-    profileIds: JSON!
+    followerProfileId: BigInt @index
+    follower: Profile @index
+    profileIds: [String!]
     timestamp: DateTime! @index
 }

@@ -1,12 +1,11 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {toJSON} from '@subsquid/util-internal-json'
 import {Store} from '../db'
 import {EntityBuffer, NamedEntityBuffer} from '../entityBuffer'
 import {Collect, Comment, Follow, Mirror, Post, Profile, Publication, PublicationVariant} from '../model'
 import * as spec from '../abi/Lens'
 import {Log, lensProtocolAddress} from '../processor'
 import {ProfileImageUpdateData} from './types'
-import {In} from 'typeorm'
+import {In, IsNull} from 'typeorm'
 
 
 function toDate(value: bigint): Date {
@@ -60,11 +59,11 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
             }
             case spec.events.Followed.topic: {
                 let e = spec.events.Followed.decode(log)
-                EntityBuffer.add(
+                NamedEntityBuffer.add('Followed',
                     new Follow({
                         id: log.id,
                         followerAddress: e[0],
-                        profileIds: toJSON(e[1]),
+                        profileIds: e[1].map(x => x.toString()),
                         timestamp: toDate(e[3]),
                     })
                 )
@@ -137,8 +136,9 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     const createdProfiles = NamedEntityBuffer.flush<Profile>('ProfileCreated')
     const updatedProfiles = NamedEntityBuffer.flush<ProfileImageUpdateData>('ProfileImageURISet')
-    const publications = NamedEntityBuffer.flush<Pub>('PublicationCreated')
+    const createdPublications = NamedEntityBuffer.flush<Pub>('PublicationCreated')
     const createdCollects = NamedEntityBuffer.flush<Collect>('Collected')
+    const createdFollows = NamedEntityBuffer.flush<Follow>('Followed')
 
     // get ids used in entities
 
@@ -146,9 +146,13 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         ...createdProfiles.map(x => x.id),
         ...updatedProfiles.map(x => x.id),
     ]
+    const profileAddresses = [
+        ...createdCollects.map(x => x.collectorAddress),
+        ...createdFollows.map(x => x.followerAddress)
+    ]
     const pubIds: string[] = []
 
-    for (var pubData of publications) {
+    for (var pubData of createdPublications) {
         switch (pubData.variant) {
             case PublicationVariant.POST: {
                 let post = pubData.data
@@ -185,9 +189,17 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     const profilesByID: Map<string, Profile> = new Map(
         storeProfilesByID.map((profile) => [profile.profileId.toString(), profile])
     )
+    const storeProfilesByAddress = await ctx.store.findBy(Profile, {address: In(profileAddresses)})
+    const profilesByAddress: Map<string, Profile> = new Map(
+        storeProfilesByAddress.map((profile) => [profile.profileId.toString(), profile])
+    )
     const profiles = new Map([
         ...profilesByID,
+        ...profilesByAddress,
     ])
+    const profileAddressToIDMapper = new Map(
+        storeProfilesByAddress.map((profile) => [profile.address, profile.profileId.toString()])
+    )
 
     const storePubsByID = await ctx.store.findBy(Publication, {id: In(pubIds)})
     const pubsByID: Map<string, Publication> = new Map(
@@ -201,12 +213,13 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     for (var profileEntity of createdProfiles) {
         profiles.set(profileEntity.id, profileEntity)
+        profileAddressToIDMapper.set(profileEntity.address, profileEntity.profileId.toString())
     }
 
     for (var profile of updatedProfiles) {
         let profileEntity = profiles.get(profile.id)
         if (profileEntity == null) {
-            ctx.log.warn(`profile is missing, profile: ${toJSON(profile)}`)
+            ctx.log.warn(`profile is missing, profile: ${JSON.stringify(profile)}`)
             continue
         }
         profileEntity.imageUri = profile.imageUri
@@ -217,7 +230,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     // update publications
 
-    for (var pubData of publications.sort(
+    for (var pubData of createdPublications.sort(
         // sort by timestamp for correct entity insertion order
         (a, b) => (a.data.timestamp < b.data.timestamp ? -1 : 1))
     ) {
@@ -226,7 +239,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                 let post = pubData.data
                 let creatorEntity = profiles.get(post.profileId.toString())
                 if (creatorEntity == null) {
-                    ctx.log.warn(`creator profile for post is missing, post: ${toJSON(post)}`)
+                    ctx.log.warn(`creator profile for post is missing, post: ${JSON.stringify(post)}`)
                     continue
                 }
                 post.creator = creatorEntity
@@ -248,17 +261,17 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                 let mirror = pubData.data
                 let creatorEntity = profiles.get(mirror.profileId.toString())
                 if (creatorEntity == null) {
-                    ctx.log.warn(`creator profile for mirror is missing, mirror: ${toJSON(mirror)}`)
+                    ctx.log.warn(`creator profile for mirror is missing, mirror: ${JSON.stringify(mirror)}`)
                     continue
                 }
                 let creatorPointedEntity = profiles.get(mirror.profileIdPointed.toString())
                 if (creatorPointedEntity == null) {
-                    ctx.log.warn(`pointed profile for mirror is missing, mirror: ${toJSON(mirror)}`)
+                    ctx.log.warn(`pointed profile for mirror is missing, mirror: ${JSON.stringify(mirror)}`)
                     continue
                 }
                 let pubPointedEntity = pubs.get(toID(mirror.profileIdPointed, mirror.pubIdPointed))
                 if (pubPointedEntity == null) {
-                    ctx.log.warn(`pointed publication for mirror is missing, mirror: ${toJSON(mirror)}`)
+                    ctx.log.warn(`pointed publication for mirror is missing, mirror: ${JSON.stringify(mirror)}`)
                     continue
                 }
                 mirror.creator = creatorEntity
@@ -282,17 +295,17 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                 let comment = pubData.data
                 let creatorEntity = profiles.get(comment.profileId.toString())
                 if (creatorEntity == null) {
-                    ctx.log.fatal(`creator profile for comment is missing, comment: ${toJSON(comment)}`)
+                    ctx.log.fatal(`creator profile for comment is missing, comment: ${JSON.stringify(comment)}`)
                     continue
                 }
                 let creatorPointedEntity = profiles.get(comment.profileIdPointed.toString())
                 if (creatorPointedEntity == null) {
-                    ctx.log.fatal(`pointed profile for comment is missing, comment: ${toJSON(comment)}`)
+                    ctx.log.fatal(`pointed profile for comment is missing, comment: ${JSON.stringify(comment)}`)
                     continue
                 }
                 let pubPointedEntity = pubs.get(toID(comment.profileIdPointed, comment.pubIdPointed))
                 if (pubPointedEntity == null) {
-                    ctx.log.warn(`pointed publication for comment is missing, comment: ${toJSON(comment)}`)
+                    ctx.log.warn(`pointed publication for comment is missing, comment: ${JSON.stringify(comment)}`)
                     continue
                 }
                 comment.creator = creatorEntity
@@ -315,31 +328,100 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         }
     }
 
+    // add collects
+
     for (var collect of createdCollects) {
         let pubCreatorEntity = profiles.get(collect.profileId.toString())
         if (pubCreatorEntity == null) {
-            ctx.log.warn(`creator profile for collect is missing, collect: ${toJSON(collect)}`)
+            ctx.log.warn(`creator profile for collect is missing, collect: ${JSON.stringify(collect)}`)
             continue
         }
         let rootCreatorEntity = profiles.get(collect.rootProfileId.toString())
         if (rootCreatorEntity == null) {
-            ctx.log.warn(`root profile for collect is missing, collect: ${toJSON(collect)}`)
+            ctx.log.warn(`root profile for collect is missing, collect: ${JSON.stringify(collect)}`)
             continue
         }
         let pubEntity = pubs.get(toID(collect.profileId, collect.pubId))
         if (pubEntity == null) {
-            ctx.log.warn(`publication for collect is missing, collect: ${toJSON(collect)}`)
+            ctx.log.warn(`publication for collect is missing, collect: ${JSON.stringify(collect)}`)
             continue
         }
         let rootPubEntity = pubs.get(toID(collect.rootProfileId, collect.rootPubId))
         if (rootPubEntity == null) {
-            ctx.log.warn(`root publication for collect is missing, collect: ${toJSON(collect)}`)
+            ctx.log.warn(`root publication for collect is missing, collect: ${JSON.stringify(collect)}`)
             continue
         }
         collect.pubCreator = pubCreatorEntity
         collect.publication = pubEntity
         collect.rootCreator = rootCreatorEntity
         collect.rootPublication = rootPubEntity
+
+        let collectorId = profileAddressToIDMapper.get(collect.collectorAddress)
+        if (collectorId != null) {
+            let collector = profiles.get(collectorId)
+            if (collector != null) {
+                collect.collectorProfileId = BigInt(collectorId)
+                collect.collector = collector
+            }
+        }
         EntityBuffer.add(collect)
+    }
+
+    // update collects if profile created after collect
+
+    const collectWithoutProfile = await ctx.store.findBy(Collect, {collector: IsNull(), collectorAddress: In(createdProfiles.map(x => x.address))})
+
+    for (var collect of collectWithoutProfile) {
+        let collectorId = profileAddressToIDMapper.get(collect.collectorAddress)
+        if (collectorId == null) {
+            ctx.log.warn(`collector profile id for collect is missing, collect: ${JSON.stringify(collect)}`)
+            continue
+        } else {
+            let collector = profiles.get(collectorId)
+            if (collector == null) {
+                ctx.log.warn(`collector profile for collect is missing, collect: ${JSON.stringify(collect)}`)
+                continue
+            } else {
+                collect.collectorProfileId = BigInt(collectorId)
+                collect.collector = collector
+            }
+        }
+        EntityBuffer.add(collect)
+    }
+
+    // add follows
+
+    for (var follow of createdFollows) {
+        let followerId = profileAddressToIDMapper.get(follow.followerAddress)
+        if (followerId != null) {
+            let follower = profiles.get(followerId)
+            if (follower != null) {
+                follow.followerProfileId = BigInt(followerId)
+                follow.follower = follower
+            }
+        }
+        EntityBuffer.add(follow)
+    }
+
+    // update follows if profile created after follow
+
+    const followsWithoutProfile = await ctx.store.findBy(Follow, {follower: IsNull(), followerAddress: In(createdProfiles.map(x => x.address))})
+
+    for (var follow of followsWithoutProfile) {
+        let followerId = profileAddressToIDMapper.get(follow.followerAddress)
+        if (followerId == null) {
+            ctx.log.warn(`follower profile id for follow is missing, follow: ${JSON.stringify(follow)}`)
+            continue
+        } else {
+            let follower = profiles.get(followerId)
+            if (follower == null) {
+                ctx.log.warn(`follower profile for follow is missing, follow: ${JSON.stringify(follow)}`)
+                continue
+            } else {
+                follow.followerProfileId = BigInt(followerId)
+                follow.follower = follower
+            }
+        }
+        EntityBuffer.add(follow)
     }
 }

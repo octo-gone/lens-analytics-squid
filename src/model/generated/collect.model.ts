@@ -17,6 +17,14 @@ export class Collect {
     collectorAddress!: string
 
     @Index_()
+    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: true})
+    collectorProfileId!: bigint | undefined | null
+
+    @Index_()
+    @ManyToOne_(() => Profile, {nullable: true})
+    collector!: Profile | undefined | null
+
+    @Index_()
     @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
     profileId!: bigint
 

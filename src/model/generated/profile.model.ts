@@ -4,6 +4,7 @@ import {Publication} from "./publication.model"
 import {Post} from "./post.model"
 import {Mirror} from "./mirror.model"
 import {Comment} from "./comment.model"
+import {Collect} from "./collect.model"
 
 @Entity_()
 export class Profile {
@@ -40,6 +41,9 @@ export class Profile {
 
     @OneToMany_(() => Comment, e => e.creator)
     comments!: Comment[]
+
+    @OneToMany_(() => Collect, e => e.collector)
+    collects!: Collect[]
 
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})
