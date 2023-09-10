@@ -40,6 +40,12 @@ export class NamedEntityBuffer {
         delete this.buffer[name]
         return values.map(x => x as unknown as E)
     }
+
+    static flushAll() {
+        let values = Object.values(this.buffer)
+        this.buffer = {}
+        return values
+    }
 }
 
 interface Entity {

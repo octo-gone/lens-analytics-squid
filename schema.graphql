@@ -1,91 +1,49 @@
 type Profile @entity {
     id: ID!
-    profileId: BigInt! @index
     address: String! @index
     handle: String! @index
     imageUri: String!
-    publications: [Publication!] @derivedFrom(field: "creator")
-    posts: [Post!] @derivedFrom(field: "creator")
-    mirrors: [Mirror!] @derivedFrom(field: "creator")
-    comments: [Comment!] @derivedFrom(field: "creator")
-    collects: [Collect!] @derivedFrom(field: "collector")
+    publications: [PublicationRef!] @derivedFrom(field: "creator")
     createdAt: DateTime! @index
     updatedAt: DateTime! @index
+}
+
+interface Publication @query {
+    id: ID!
+    ref: PublicationRef
+}
+
+type PublicationRef @entity {
+    id: ID!
+    creator: Profile! @index
+    variant: PublicationVariant! @index
+    post: Post @unique
+    mirror: Mirror @unique
+    comment: Comment @unique
+    timestamp: DateTime! @index
 }
 
 enum PublicationVariant {
     POST, COMMENT, MIRROR
 }
 
-type Publication @entity {
+type Post implements Publication @entity {
     id: ID!
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    creator: Profile! @index
-    variant: PublicationVariant!
-    rootCollects: [Collect!] @derivedFrom(field: "rootPublication")
-    collects: [Collect!] @derivedFrom(field: "publication")
-    timestamp: DateTime! @index
-}
-
-type Post @entity {
-    id: ID!
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    publication: Publication! @index
-    creator: Profile! @index
+    ref: PublicationRef @derivedFrom(field: "post")
     contentUri: String!
-    timestamp: DateTime! @index
 }
 
-type Mirror @entity {
+type Mirror implements Publication @entity {
     id: ID!
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    creator: Profile! @index
-    publication: Publication! @index
-    profileIdPointed: BigInt! @index
-    pubIdPointed: BigInt! @index
-    creatorPointed: Profile! @index
-    publicationPointed: Publication! @index
-    timestamp: DateTime! @index
+    ref: PublicationRef @derivedFrom(field: "mirror")
+    mirroredCreator: Profile! @index
+    mirroredPublication: PublicationRef! @index
 }
 
-type Comment @entity {
+type Comment implements Publication @entity {
     id: ID!
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    publication: Publication! @index
-    creator: Profile! @index
+    ref: PublicationRef @derivedFrom(field: "comment")
     contentUri: String!
-    profileIdPointed: BigInt! @index
-    pubIdPointed: BigInt! @index
-    creatorPointed: Profile! @index
-    publicationPointed: Publication! @index
-    timestamp: DateTime! @index
-}
-
-type Collect @entity {
-    id: ID!
-    collectorAddress: String! @index
-    collectorProfileId: BigInt @index
-    collector: Profile @index
-    profileId: BigInt! @index
-    pubId: BigInt! @index
-    pubCreator: Profile! @index
-    publication: Publication! @index
-    rootProfileId: BigInt! @index
-    rootPubId: BigInt! @index
-    rootCreator: Profile! @index
-    rootPublication: Publication! @index
-    timestamp: DateTime! @index
-}
-
-type Follow @entity {
-    id: ID!
-    followerAddress: String! @index
-    followerProfileId: BigInt @index
-    follower: Profile @index
-    profileIds: [String!]
-    timestamp: DateTime! @index
+    commentedCreator: Profile! @index
+    commentedPublication: PublicationRef! @index
 }

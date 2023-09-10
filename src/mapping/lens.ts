@@ -1,11 +1,11 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Store} from '../db'
 import {EntityBuffer, NamedEntityBuffer} from '../entityBuffer'
-import {Collect, Comment, Follow, Mirror, Post, Profile, Publication, PublicationVariant} from '../model'
 import * as spec from '../abi/Lens'
 import {Log, lensProtocolAddress} from '../processor'
-import {ProfileImageUpdateData} from './types'
+import {ProfileImageUpdate} from './types'
 import {In, IsNull} from 'typeorm'
+import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile} from '../model'
 
 
 function toDate(value: bigint): Date {
@@ -13,90 +13,62 @@ function toDate(value: bigint): Date {
 }
 
 function toID(profileId: bigint, pubId: bigint): string {
-    return `${profileId}-${pubId}`
+    return `${profileId}_${pubId}`
 }
 
 
-type Pub = ({data: Post, variant: PublicationVariant.POST} |
-    {data: Mirror, variant: PublicationVariant.MIRROR} |
-    {data: Comment, variant: PublicationVariant.COMMENT}) & {id: string}
+type Publication = (
+    {post: Post, variant: PublicationVariant.POST} |
+    {mirror: Mirror, variant: PublicationVariant.MIRROR, mirroredProfileId: string, mirroredPubId: string} |
+    {comment: Comment, variant: PublicationVariant.COMMENT, commentedProfileId: string, commentedPubId: string}
+) & {id: string, creatorId: string, timestamp: Date}
 
 
 export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
     try {
         switch (log.topics[0]) {
-            case spec.events.Collected.topic: {
-                let e = spec.events.Collected.decode(log)
-                NamedEntityBuffer.add('Collected',
-                    new Collect({
-                        id: log.id,
-                        collectorAddress: e[0],
-                        profileId: e[1],
-                        pubId: e[2],
-                        rootProfileId: e[3],
-                        rootPubId: e[4],
-                        timestamp: toDate(e[6]),
-                    })
-                )
-                break
-            }
             case spec.events.CommentCreated.topic: {
                 let e = spec.events.CommentCreated.decode(log)
-                NamedEntityBuffer.add<Pub>('PublicationCreated', {
+                NamedEntityBuffer.add<Publication>('PublicationCreated', {
                     id: toID(e[0], e[1]),
-                    data: new Comment({
+                    creatorId: e[0].toString(),
+                    commentedPubId: toID(e[3], e[4]),
+                    commentedProfileId: e[3].toString(),
+                    comment: new Comment({
                         id: toID(e[0], e[1]),
-                        profileId: e[0],
-                        pubId: e[1],
                         contentUri: e[2],
-                        profileIdPointed: e[3],
-                        pubIdPointed: e[4],
-                        timestamp: toDate(e[10]),
                     }),
                     variant: PublicationVariant.COMMENT,
+                    timestamp: toDate(e[10]),
                 })
-                break
-            }
-            case spec.events.Followed.topic: {
-                let e = spec.events.Followed.decode(log)
-                NamedEntityBuffer.add('Followed',
-                    new Follow({
-                        id: log.id,
-                        followerAddress: e[0],
-                        profileIds: e[1].map(x => x.toString()),
-                        timestamp: toDate(e[3]),
-                    })
-                )
                 break
             }
             case spec.events.MirrorCreated.topic: {
                 let e = spec.events.MirrorCreated.decode(log)
-                NamedEntityBuffer.add<Pub>('PublicationCreated', {
+                NamedEntityBuffer.add<Publication>('PublicationCreated', {
                     id: toID(e[0], e[1]),
-                    data: new Mirror({
+                    creatorId: e[0].toString(),
+                    mirroredPubId: toID(e[2], e[3]),
+                    mirroredProfileId: e[2].toString(),
+                    mirror: new Mirror({
                         id: toID(e[0], e[1]),
-                        profileId: e[0],
-                        pubId: e[1],
-                        profileIdPointed: e[2],
-                        pubIdPointed: e[3],
-                        timestamp: toDate(e[7]),
                     }),
                     variant: PublicationVariant.MIRROR,
+                    timestamp: toDate(e[7]),
                 })
                 break
             }
             case spec.events.PostCreated.topic: {
                 let e = spec.events.PostCreated.decode(log)
-                NamedEntityBuffer.add<Pub>('PublicationCreated', {
+                NamedEntityBuffer.add<Publication>('PublicationCreated', {
                     id: toID(e[0], e[1]),
-                    data: new Post({
+                    creatorId: e[0].toString(),
+                    post: new Post({
                         id: toID(e[0], e[1]),
-                        profileId: e[0],
-                        pubId: e[1],
                         contentUri: e[2],
-                        timestamp: toDate(e[7]),
                     }),
                     variant: PublicationVariant.POST,
+                    timestamp: toDate(e[7]),
                 })
                 break
             }
@@ -104,7 +76,6 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                 let e = spec.events.ProfileCreated.decode(log)
                 NamedEntityBuffer.add('ProfileCreated', new Profile({
                     id: e[0].toString(),
-                    profileId: e[0],
                     address: e[2],
                     handle: e[3],
                     imageUri: e[4],
@@ -115,9 +86,8 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
             }
             case spec.events.ProfileImageURISet.topic: {
                 let e = spec.events.ProfileImageURISet.decode(log)
-                NamedEntityBuffer.add<ProfileImageUpdateData>('ProfileImageURISet', {
+                NamedEntityBuffer.add<ProfileImageUpdate>('ProfileImageURISet', {
                     id: e[0].toString(),
-                    profileId: e[0],
                     imageUri: e[1],
                     updatedAt: toDate(e[2]),
                 })
@@ -135,10 +105,8 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     // load fetched entities from buffer
 
     const createdProfiles = NamedEntityBuffer.flush<Profile>('ProfileCreated')
-    const updatedProfiles = NamedEntityBuffer.flush<ProfileImageUpdateData>('ProfileImageURISet')
-    const createdPublications = NamedEntityBuffer.flush<Pub>('PublicationCreated')
-    const createdCollects = NamedEntityBuffer.flush<Collect>('Collected')
-    const createdFollows = NamedEntityBuffer.flush<Follow>('Followed')
+    const updatedProfiles = NamedEntityBuffer.flush<ProfileImageUpdate>('ProfileImageURISet')
+    const createdPublications = NamedEntityBuffer.flush<Publication>('PublicationCreated')
 
     // get ids used in entities
 
@@ -146,63 +114,41 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         ...createdProfiles.map(x => x.id),
         ...updatedProfiles.map(x => x.id),
     ]
-    const profileAddresses = [
-        ...createdCollects.map(x => x.collectorAddress),
-        ...createdFollows.map(x => x.followerAddress)
-    ]
     const pubIds: string[] = []
 
     for (var pubData of createdPublications) {
         switch (pubData.variant) {
             case PublicationVariant.POST: {
-                let post = pubData.data
-                profileIds.push(post.profileId.toString())
+                profileIds.push(pubData.creatorId)
                 break
             }
             case PublicationVariant.MIRROR: {
-                let mirror = pubData.data
-                profileIds.push(mirror.profileId.toString())
-                profileIds.push(mirror.profileIdPointed.toString())
-                pubIds.push(toID(mirror.profileIdPointed, mirror.pubIdPointed))
+                profileIds.push(pubData.creatorId)
+                profileIds.push(pubData.mirroredProfileId)
+                pubIds.push(pubData.mirroredPubId)
                 break
             }
             case PublicationVariant.COMMENT: {
-                let comment = pubData.data
-                profileIds.push(comment.profileId.toString())
-                profileIds.push(comment.profileIdPointed.toString())
-                pubIds.push(toID(comment.profileIdPointed, comment.pubIdPointed))
+                profileIds.push(pubData.creatorId)
+                profileIds.push(pubData.commentedProfileId)
+                pubIds.push(pubData.commentedPubId)
                 break
             }
         }
     }
 
-    createdCollects.forEach(x => {
-        profileIds.push(x.profileId.toString())
-        profileIds.push(x.rootProfileId.toString())
-        pubIds.push(toID(x.profileId, x.pubId))
-        pubIds.push(toID(x.rootProfileId, x.rootPubId))
-    })
-
     // load entities using gathered ids
 
     const storeProfilesByID = await ctx.store.findBy(Profile, {id: In(profileIds)})
     const profilesByID: Map<string, Profile> = new Map(
-        storeProfilesByID.map((profile) => [profile.profileId.toString(), profile])
-    )
-    const storeProfilesByAddress = await ctx.store.findBy(Profile, {address: In(profileAddresses)})
-    const profilesByAddress: Map<string, Profile> = new Map(
-        storeProfilesByAddress.map((profile) => [profile.profileId.toString(), profile])
+        storeProfilesByID.map((profile) => [profile.id, profile])
     )
     const profiles = new Map([
         ...profilesByID,
-        ...profilesByAddress,
     ])
-    const profileAddressToIDMapper = new Map(
-        storeProfilesByAddress.map((profile) => [profile.address, profile.profileId.toString()])
-    )
 
-    const storePubsByID = await ctx.store.findBy(Publication, {id: In(pubIds)})
-    const pubsByID: Map<string, Publication> = new Map(
+    const storePubsByID = await ctx.store.findBy(PublicationRef, {id: In(pubIds)})
+    const pubsByID: Map<string, PublicationRef> = new Map(
         storePubsByID.map((pub) => [pub.id, pub])
     )
     const pubs = new Map([
@@ -213,7 +159,6 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     for (var profileEntity of createdProfiles) {
         profiles.set(profileEntity.id, profileEntity)
-        profileAddressToIDMapper.set(profileEntity.address, profileEntity.profileId.toString())
     }
 
     for (var profile of updatedProfiles) {
@@ -226,202 +171,93 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         profileEntity.updatedAt = profile.updatedAt
     }
 
-    profiles.forEach(x => EntityBuffer.add(x))
+    profiles.forEach(x => NamedEntityBuffer.add('Save', x))
 
     // update publications
 
     for (var pubData of createdPublications.sort(
         // sort by timestamp for correct entity insertion order
-        (a, b) => (a.data.timestamp < b.data.timestamp ? -1 : 1))
+        (a, b) => (a.timestamp < b.timestamp ? -1 : 1))
     ) {
         switch (pubData.variant) {
             case PublicationVariant.POST: {
-                let post = pubData.data
-                let creatorEntity = profiles.get(post.profileId.toString())
+                let creatorEntity = profiles.get(pubData.creatorId)
                 if (creatorEntity == null) {
-                    ctx.log.warn(`creator profile for post is missing, post: ${JSON.stringify(post)}`)
+                    ctx.log.warn(`creator profile for post is missing, post: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                post.creator = creatorEntity
-                let pubEntity = new Publication({
-                    id: post.id,
-                    profileId: post.profileId,
-                    pubId: post.pubId,
-                    creator: post.creator,
+                let pubEntity = new PublicationRef({
+                    id: pubData.id,
+                    creator: creatorEntity,
                     variant: PublicationVariant.POST,
-                    timestamp: post.timestamp
+                    post: pubData.post,
+                    timestamp: pubData.timestamp
                 })
-                post.publication = pubEntity
                 pubs.set(pubEntity.id, pubEntity)
-                EntityBuffer.add(pubEntity)
-                EntityBuffer.add(post)
+                NamedEntityBuffer.add('Save', pubData.post)
+                NamedEntityBuffer.add('Save', pubEntity)
                 break
             }
             case PublicationVariant.MIRROR: {
-                let mirror = pubData.data
-                let creatorEntity = profiles.get(mirror.profileId.toString())
+                let creatorEntity = profiles.get(pubData.creatorId)
                 if (creatorEntity == null) {
-                    ctx.log.warn(`creator profile for mirror is missing, mirror: ${JSON.stringify(mirror)}`)
+                    ctx.log.warn(`creator profile for mirror is missing, mirror: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                let creatorPointedEntity = profiles.get(mirror.profileIdPointed.toString())
-                if (creatorPointedEntity == null) {
-                    ctx.log.warn(`pointed profile for mirror is missing, mirror: ${JSON.stringify(mirror)}`)
+                let mirroredProfileEntity = profiles.get(pubData.mirroredProfileId)
+                if (mirroredProfileEntity == null) {
+                    ctx.log.warn(`mirrored profile for mirror is missing, mirror: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                let pubPointedEntity = pubs.get(toID(mirror.profileIdPointed, mirror.pubIdPointed))
-                if (pubPointedEntity == null) {
-                    ctx.log.warn(`pointed publication for mirror is missing, mirror: ${JSON.stringify(mirror)}`)
+                let mirroredPubEntity = pubs.get(pubData.mirroredPubId)
+                if (mirroredPubEntity == null) {
+                    ctx.log.warn(`mirrored publication for mirror is missing, mirror: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                mirror.creator = creatorEntity
-                mirror.creatorPointed = creatorPointedEntity
-                mirror.publicationPointed = pubPointedEntity
-                let pubEntity = new Publication({
-                    id: mirror.id,
-                    profileId: mirror.profileId,
-                    pubId: mirror.pubId,
-                    creator: mirror.creator,
+                pubData.mirror.mirroredCreator = mirroredProfileEntity
+                pubData.mirror.mirroredPublication = mirroredPubEntity
+                let pubEntity = new PublicationRef({
+                    id: pubData.id,
+                    creator: creatorEntity,
                     variant: PublicationVariant.MIRROR,
-                    timestamp: mirror.timestamp
+                    mirror: pubData.mirror,
+                    timestamp: pubData.timestamp
                 })
-                mirror.publication = pubEntity
                 pubs.set(pubEntity.id, pubEntity)
-                EntityBuffer.add(pubEntity)
-                EntityBuffer.add(mirror)
+                NamedEntityBuffer.add('Save', pubData.mirror)
+                NamedEntityBuffer.add('Save', pubEntity)
                 break
             }
             case PublicationVariant.COMMENT: {
-                let comment = pubData.data
-                let creatorEntity = profiles.get(comment.profileId.toString())
+                let creatorEntity = profiles.get(pubData.creatorId)
                 if (creatorEntity == null) {
-                    ctx.log.fatal(`creator profile for comment is missing, comment: ${JSON.stringify(comment)}`)
+                    ctx.log.warn(`creator profile for comment is missing, comment: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                let creatorPointedEntity = profiles.get(comment.profileIdPointed.toString())
-                if (creatorPointedEntity == null) {
-                    ctx.log.fatal(`pointed profile for comment is missing, comment: ${JSON.stringify(comment)}`)
+                let commentedProfileEntity = profiles.get(pubData.commentedProfileId)
+                if (commentedProfileEntity == null) {
+                    ctx.log.warn(`commented profile for comment is missing, comment: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                let pubPointedEntity = pubs.get(toID(comment.profileIdPointed, comment.pubIdPointed))
-                if (pubPointedEntity == null) {
-                    ctx.log.warn(`pointed publication for comment is missing, comment: ${JSON.stringify(comment)}`)
+                let commentedPubEntity = pubs.get(pubData.commentedPubId)
+                if (commentedPubEntity == null) {
+                    ctx.log.warn(`commented publication for comment is missing, comment: ${JSON.stringify(pubData)}`)
                     continue
                 }
-                comment.creator = creatorEntity
-                comment.creatorPointed = creatorPointedEntity
-                comment.publicationPointed = pubPointedEntity
-                let pubEntity = new Publication({
-                    id: comment.id,
-                    profileId: comment.profileId,
-                    pubId: comment.pubId,
-                    creator: comment.creator,
+                pubData.comment.commentedCreator = commentedProfileEntity
+                pubData.comment.commentedPublication = commentedPubEntity
+                let pubEntity = new PublicationRef({
+                    id: pubData.id,
+                    creator: creatorEntity,
                     variant: PublicationVariant.COMMENT,
-                    timestamp: comment.timestamp
+                    comment: pubData.comment,
+                    timestamp: pubData.timestamp
                 })
-                comment.publication = pubEntity
                 pubs.set(pubEntity.id, pubEntity)
-                EntityBuffer.add(pubEntity)
-                EntityBuffer.add(comment)
+                NamedEntityBuffer.add('Save', pubData.comment)
+                NamedEntityBuffer.add('Save', pubEntity)
                 break
             }
         }
-    }
-
-    // add collects
-
-    for (var collect of createdCollects) {
-        let pubCreatorEntity = profiles.get(collect.profileId.toString())
-        if (pubCreatorEntity == null) {
-            ctx.log.warn(`creator profile for collect is missing, collect: ${JSON.stringify(collect)}`)
-            continue
-        }
-        let rootCreatorEntity = profiles.get(collect.rootProfileId.toString())
-        if (rootCreatorEntity == null) {
-            ctx.log.warn(`root profile for collect is missing, collect: ${JSON.stringify(collect)}`)
-            continue
-        }
-        let pubEntity = pubs.get(toID(collect.profileId, collect.pubId))
-        if (pubEntity == null) {
-            ctx.log.warn(`publication for collect is missing, collect: ${JSON.stringify(collect)}`)
-            continue
-        }
-        let rootPubEntity = pubs.get(toID(collect.rootProfileId, collect.rootPubId))
-        if (rootPubEntity == null) {
-            ctx.log.warn(`root publication for collect is missing, collect: ${JSON.stringify(collect)}`)
-            continue
-        }
-        collect.pubCreator = pubCreatorEntity
-        collect.publication = pubEntity
-        collect.rootCreator = rootCreatorEntity
-        collect.rootPublication = rootPubEntity
-
-        let collectorId = profileAddressToIDMapper.get(collect.collectorAddress)
-        if (collectorId != null) {
-            let collector = profiles.get(collectorId)
-            if (collector != null) {
-                collect.collectorProfileId = BigInt(collectorId)
-                collect.collector = collector
-            }
-        }
-        EntityBuffer.add(collect)
-    }
-
-    // update collects if profile created after collect
-
-    const collectWithoutProfile = await ctx.store.findBy(Collect, {collector: IsNull(), collectorAddress: In(createdProfiles.map(x => x.address))})
-
-    for (var collect of collectWithoutProfile) {
-        let collectorId = profileAddressToIDMapper.get(collect.collectorAddress)
-        if (collectorId == null) {
-            ctx.log.warn(`collector profile id for collect is missing, collect: ${JSON.stringify(collect)}`)
-            continue
-        } else {
-            let collector = profiles.get(collectorId)
-            if (collector == null) {
-                ctx.log.warn(`collector profile for collect is missing, collect: ${JSON.stringify(collect)}`)
-                continue
-            } else {
-                collect.collectorProfileId = BigInt(collectorId)
-                collect.collector = collector
-            }
-        }
-        EntityBuffer.add(collect)
-    }
-
-    // add follows
-
-    for (var follow of createdFollows) {
-        let followerId = profileAddressToIDMapper.get(follow.followerAddress)
-        if (followerId != null) {
-            let follower = profiles.get(followerId)
-            if (follower != null) {
-                follow.followerProfileId = BigInt(followerId)
-                follow.follower = follower
-            }
-        }
-        EntityBuffer.add(follow)
-    }
-
-    // update follows if profile created after follow
-
-    const followsWithoutProfile = await ctx.store.findBy(Follow, {follower: IsNull(), followerAddress: In(createdProfiles.map(x => x.address))})
-
-    for (var follow of followsWithoutProfile) {
-        let followerId = profileAddressToIDMapper.get(follow.followerAddress)
-        if (followerId == null) {
-            ctx.log.warn(`follower profile id for follow is missing, follow: ${JSON.stringify(follow)}`)
-            continue
-        } else {
-            let follower = profiles.get(followerId)
-            if (follower == null) {
-                ctx.log.warn(`follower profile for follow is missing, follow: ${JSON.stringify(follow)}`)
-                continue
-            } else {
-                follow.followerProfileId = BigInt(followerId)
-                follow.follower = follower
-            }
-        }
-        EntityBuffer.add(follow)
     }
 }

@@ -11,7 +11,7 @@ Links:
 ## Squid
 
 Links:
- - [🦑 GraphQL API](https://squid.subsquid.io/lens-protocol-analytics/v/v5/graphql)
+ - [🦑 GraphQL API](https://squid.subsquid.io/lens-protocol-analytics/v/v6/graphql)
 
 ## Usage
 
@@ -38,3 +38,43 @@ Links:
 
     For more details on how to build and deploy a squid, see the [docs](https://docs.subsquid.io).
 
+## Example queries
+
+```gql
+query MyQuery {
+  publications(limit: 10, orderBy: ref_timestamp_ASC) {
+    ref {
+      variant
+      timestamp
+      creator {
+        handle
+      }
+    }
+    ... on Post {
+      id
+      contentUri
+    }
+    ... on Mirror {
+      id
+      mirroredCreator {
+        handle
+      }
+      mirroredPublication {
+        id
+        variant
+      }
+    }
+    ... on Comment {
+      id
+      commentedCreator {
+        handle
+      }
+      commentedPublication {
+        id
+        variant
+      }
+      contentUri
+    }
+  }
+}
+```

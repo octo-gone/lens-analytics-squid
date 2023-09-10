@@ -1,7 +1,7 @@
 import {lens} from './mapping'
 import {processor, lensProtocolAddress} from './processor'
 import {db} from './db'
-import {EntityBuffer} from './entityBuffer'
+import {NamedEntityBuffer} from './entityBuffer'
 
 processor.run(db, async (ctx) => {
     for (let block of ctx.blocks) {
@@ -13,7 +13,7 @@ processor.run(db, async (ctx) => {
     }
     await lens.mergeData(ctx)
 
-    for (let entities of EntityBuffer.flush()) {
+    for (let entities of NamedEntityBuffer.flush("Save")) {
         await ctx.store.save(entities)
     }
 })

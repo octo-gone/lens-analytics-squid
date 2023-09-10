@@ -1,7 +1,5 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
-import * as marshal from "./marshal"
-import {Publication} from "./publication.model"
-import {Profile} from "./profile.model"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
+import {PublicationRef} from "./publicationRef.model"
 
 @Entity_()
 export class Post {
@@ -12,26 +10,7 @@ export class Post {
     @PrimaryColumn_()
     id!: string
 
-    @Index_()
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    profileId!: bigint
-
-    @Index_()
-    @Column_("numeric", {transformer: marshal.bigintTransformer, nullable: false})
-    pubId!: bigint
-
-    @Index_()
-    @ManyToOne_(() => Publication, {nullable: true})
-    publication!: Publication
-
-    @Index_()
-    @ManyToOne_(() => Profile, {nullable: true})
-    creator!: Profile
 
     @Column_("text", {nullable: false})
     contentUri!: string
-
-    @Index_()
-    @Column_("timestamp with time zone", {nullable: false})
-    timestamp!: Date
 }

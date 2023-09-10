@@ -1,6 +1,5 @@
-export type ProfileImageUpdateData = {
+export type ProfileImageUpdate = {
     id: string;
-    profileId: bigint;
     imageUri: string;
     updatedAt: Date;
 }
