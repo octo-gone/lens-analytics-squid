@@ -1,12 +1,12 @@
-module.exports = class Data1694375587038 {
-    name = 'Data1694375587038'
+module.exports = class Data1694381419361 {
+    name = 'Data1694381419361'
 
     async up(db) {
-        await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "content_uri" text NOT NULL, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
         await db.query(`CREATE TABLE "mirror" ("id" character varying NOT NULL, "mirrored_creator_id" character varying, "mirrored_publication_id" character varying, CONSTRAINT "PK_1550eca1496157edb9af20a1bdd" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_bd7df2937349fcbce9ec792ada" ON "mirror" ("mirrored_creator_id") `)
         await db.query(`CREATE INDEX "IDX_e4d9ffc54c3594135f98ee4c19" ON "mirror" ("mirrored_publication_id") `)
-        await db.query(`CREATE TABLE "comment" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "commented_creator_id" character varying, "commented_publication_id" character varying, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "comment" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, "commented_creator_id" character varying, "commented_publication_id" character varying, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_1d9ca0edf55bf20f432c833f05" ON "comment" ("commented_creator_id") `)
         await db.query(`CREATE INDEX "IDX_c347365e78bd7ea7084bb871d1" ON "comment" ("commented_publication_id") `)
         await db.query(`CREATE TABLE "publication_ref" ("id" character varying NOT NULL, "variant" character varying(7) NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "creator_id" character varying, "post_id" character varying, "mirror_id" character varying, "comment_id" character varying, CONSTRAINT "REL_baab7ed927f6da2aec78efaacf" UNIQUE ("post_id"), CONSTRAINT "REL_a3f289268936a82b5754ff8c5d" UNIQUE ("mirror_id"), CONSTRAINT "REL_855d700f25c5a1da322a4d18b0" UNIQUE ("comment_id"), CONSTRAINT "PK_e1ca18ac7ada3c0d380b133c0b4" PRIMARY KEY ("id"))`)

@@ -15,6 +15,9 @@ export class Comment {
     @Column_("text", {nullable: false})
     contentUri!: string
 
+    @Column_("jsonb", {nullable: true})
+    content!: unknown | undefined | null
+
     @Index_()
     @ManyToOne_(() => Profile, {nullable: true})
     commentedCreator!: Profile

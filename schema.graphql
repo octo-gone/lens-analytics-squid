@@ -31,6 +31,7 @@ type Post implements Publication @entity {
     id: ID!
     ref: PublicationRef @derivedFrom(field: "post")
     contentUri: String!
+    content: JSON
 }
 
 type Mirror implements Publication @entity {
@@ -44,6 +45,7 @@ type Comment implements Publication @entity {
     id: ID!
     ref: PublicationRef @derivedFrom(field: "comment")
     contentUri: String!
+    content: JSON
     commentedCreator: Profile! @index
     commentedPublication: PublicationRef! @index
 }

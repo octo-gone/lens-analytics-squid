@@ -13,4 +13,7 @@ export class Post {
 
     @Column_("text", {nullable: false})
     contentUri!: string
+
+    @Column_("jsonb", {nullable: true})
+    content!: unknown | undefined | null
 }

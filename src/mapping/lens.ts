@@ -1,11 +1,12 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Store} from '../db'
-import {EntityBuffer, NamedEntityBuffer} from '../entityBuffer'
+import {NamedEntityBuffer} from '../entityBuffer'
 import * as spec from '../abi/Lens'
 import {Log, lensProtocolAddress} from '../processor'
 import {ProfileImageUpdate} from './types'
-import {In, IsNull} from 'typeorm'
+import {In} from 'typeorm'
 import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile} from '../model'
+import {fetchContentBatch} from './ipfs'
 
 
 function toDate(value: bigint): Date {
@@ -36,7 +37,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                     commentedProfileId: e[3].toString(),
                     comment: new Comment({
                         id: toID(e[0], e[1]),
-                        contentUri: e[2],
+                        contentUri: e[2]
                     }),
                     variant: PublicationVariant.COMMENT,
                     timestamp: toDate(e[10]),
@@ -175,6 +176,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     // update publications
 
+    const contentUris: {pubs: {content: unknown}[], uris: string[]} = {pubs: [], uris: []}
     for (var pubData of createdPublications.sort(
         // sort by timestamp for correct entity insertion order
         (a, b) => (a.timestamp < b.timestamp ? -1 : 1))
@@ -186,6 +188,8 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                     ctx.log.warn(`creator profile for post is missing, post: ${JSON.stringify(pubData)}`)
                     continue
                 }
+                contentUris.pubs.push(pubData.post)
+                contentUris.uris.push(pubData.post.contentUri)
                 let pubEntity = new PublicationRef({
                     id: pubData.id,
                     creator: creatorEntity,
@@ -244,6 +248,8 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                     ctx.log.warn(`commented publication for comment is missing, comment: ${JSON.stringify(pubData)}`)
                     continue
                 }
+                contentUris.pubs.push(pubData.comment)
+                contentUris.uris.push(pubData.comment.contentUri)
                 pubData.comment.commentedCreator = commentedProfileEntity
                 pubData.comment.commentedPublication = commentedPubEntity
                 let pubEntity = new PublicationRef({
@@ -260,4 +266,9 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
             }
         }
     }
+
+    const contents = await fetchContentBatch(ctx, contentUris.uris)
+    contentUris.pubs.forEach((pubEntity, index) => {
+        pubEntity.content = contents[index]
+    })
 }
