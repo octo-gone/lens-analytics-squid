@@ -27,7 +27,7 @@ export async function fetchContent(
     try {
         let data: any
         if (uri.startsWith('ipfs://')) {
-            data = await ipfsClient.get('ipfs/' + ipfsCIDRegExp.exec(uri)![1])
+            data = await ipfsClient.get('ipfs/' + uri.replace('ipfs://', ''))
         } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
             if (uri.includes('ipfs/')) {
                 data = await ipfsClient.get('ipfs/' + ipfsCIDRegExp.exec(uri)![1])

@@ -7,15 +7,7 @@ import {ProfileImageUpdate} from './types'
 import {In} from 'typeorm'
 import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile} from '../model'
 import {fetchContentBatch} from './ipfs'
-
-
-function toDate(value: bigint): Date {
-    return new Date(Number(value)*1000)
-}
-
-function toID(profileId: bigint, pubId: bigint): string {
-    return `${profileId}_${pubId}`
-}
+import {toID, toDate, removeBrokenSurrogate} from './utils'
 
 
 type Publication = (
@@ -269,6 +261,13 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     const contents = await fetchContentBatch(ctx, contentUris.uris)
     contentUris.pubs.forEach((pubEntity, index) => {
+        // for some reason someone removed low-surrogate from UTF-16 character (emoji)
+        // this caused issues with typeorm
+        // https://data.lens.phaver.com/api/lens/posts/21cb17c9-4b76-43b1-b782-0c6b075fa64e
+        let [name, removed] = removeBrokenSurrogate(contents[index]?.name || '')
+        if (removed) {
+            contents[index].name = name
+        }
         pubEntity.content = contents[index]
     })
 }
