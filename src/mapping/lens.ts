@@ -261,9 +261,6 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     const contents = await fetchContentBatch(ctx, contentUris.uris)
     contentUris.pubs.forEach((pubEntity, index) => {
-        // for some reason someone removed low-surrogate from UTF-16 character (emoji)
-        // this caused issues with typeorm
-        // https://data.lens.phaver.com/api/lens/posts/21cb17c9-4b76-43b1-b782-0c6b075fa64e
         let [name, removed] = removeBrokenSurrogate(contents[index]?.name || '')
         if (removed) {
             contents[index].name = name
