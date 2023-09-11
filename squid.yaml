@@ -8,6 +8,7 @@ deploy:
     postgres:
   secrets:
     - POLYGON_RPC_ENDPOINT
+    - IPFS_BASE_URL
   processor:
     cmd:
       - node
