@@ -1,4 +1,4 @@
-const brokenSurrogateRegExp = /[\ud800-\udbff][^\udc00-\udfff]|[^\ud800-\udbff][\udc00-\udfff]/g
+const brokenSurrogateRegExp = /[\ud800-\udbff]([^\udc00-\udfff])|([^\ud800-\udbff])[\udc00-\udfff]/g
 
 export function removeBrokenSurrogate(x: string): [string, boolean] {
     // for some reason someone removed low- and high-surrogate from UTF-16 character (emoji)
@@ -10,7 +10,7 @@ export function removeBrokenSurrogate(x: string): [string, boolean] {
     //   https://datacadamia.com/data/type/text/surrogate
     if (!brokenSurrogateRegExp.test(x))
         return [x, false]
-    return [x.replace(brokenSurrogateRegExp, ''), true]
+    return [x.replace(brokenSurrogateRegExp, '$1'), true]
 }
 
 export function toDate(value: bigint): Date {
