@@ -2,6 +2,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor';
 import {Store} from '../db'
 import {HttpClient} from '@subsquid/util-internal-http-client'
 
+const IPFS_BATCH_SIZE = process.env.IPFS_BATCH_SIZE != undefined ? Number(process.env.IPFS_BATCH_SIZE) : 150
 
 const ipfsClient = new HttpClient({
     baseUrl: process.env.IPFS_BASE_URL,
@@ -48,8 +49,6 @@ export async function fetchContent(
     }
     return null
 }
-
-const IPFS_BATCH_SIZE = 100
 
 export async function fetchContentBatch(
     ctx: DataHandlerContext<Store>,

@@ -10,6 +10,8 @@ deploy:
     - POLYGON_RPC_ENDPOINT
     - IPFS_BASE_URL
   processor:
+    env:
+      IPFS_BATCH_SIZE: 150
     cmd:
       - node
       - lib/main

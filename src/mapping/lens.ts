@@ -168,7 +168,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     // update publications
 
-    const contentUris: {pubs: {content: unknown}[], uris: string[]} = {pubs: [], uris: []}
+    const contentUris: {pubs: (Post | Comment)[], uris: string[]} = {pubs: [], uris: []}
     for (var pubData of createdPublications.sort(
         // sort by timestamp for correct entity insertion order
         (a, b) => (a.timestamp < b.timestamp ? -1 : 1))
@@ -261,9 +261,13 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     const contents = await fetchContentBatch(ctx, contentUris.uris)
     contentUris.pubs.forEach((pubEntity, index) => {
-        let [name, removed] = removeBrokenSurrogate(contents[index]?.name || '')
-        if (removed) {
-            contents[index].name = name
+        if (contents[index] == null) return
+        for (var field of ['name', 'description', 'content']) {
+            let [text, removed] = removeBrokenSurrogate(contents[index][field] || '')
+            if (removed) {
+                ctx.log.info(`broken surrogate removed from content, id: ${pubEntity.id}`)
+                contents[index][field] = text
+            }
         }
         pubEntity.content = contents[index]
     })
