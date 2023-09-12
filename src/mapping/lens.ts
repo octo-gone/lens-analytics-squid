@@ -3,26 +3,32 @@ import {Store} from '../db'
 import {NamedEntityBuffer} from '../entityBuffer'
 import * as spec from '../abi/Lens'
 import {Log, lensProtocolAddress} from '../processor'
-import {ProfileImageUpdate} from './types'
+import {ProfileImageUpdateData, PublicationData, CollectData} from './types'
 import {In} from 'typeorm'
-import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile} from '../model'
+import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile, Collect} from '../model'
 import {fetchContentBatch} from './ipfs'
 import {toID, toDate, removeBrokenSurrogate} from './utils'
-
-
-type Publication = (
-    {post: Post, variant: PublicationVariant.POST} |
-    {mirror: Mirror, variant: PublicationVariant.MIRROR, mirroredProfileId: string, mirroredPubId: string} |
-    {comment: Comment, variant: PublicationVariant.COMMENT, commentedProfileId: string, commentedPubId: string}
-) & {id: string, creatorId: string, timestamp: Date}
 
 
 export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
     try {
         switch (log.topics[0]) {
+            case spec.events.Collected.topic: {
+                let e = spec.events.Collected.decode(log)
+                NamedEntityBuffer.add<CollectData>('PublicationCollected', {
+                    id: log.id,
+                    collector: e[0],
+                    profileId: e[1].toString(),
+                    pubId: toID(e[1], e[2]),
+                    rootProfileId: e[3].toString(),
+                    rootPubId: toID(e[3], e[4]),
+                    timestamp: toDate(e[6]),
+                })
+                break
+            }
             case spec.events.CommentCreated.topic: {
                 let e = spec.events.CommentCreated.decode(log)
-                NamedEntityBuffer.add<Publication>('PublicationCreated', {
+                NamedEntityBuffer.add<PublicationData>('PublicationCreated', {
                     id: toID(e[0], e[1]),
                     creatorId: e[0].toString(),
                     commentedPubId: toID(e[3], e[4]),
@@ -38,7 +44,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
             }
             case spec.events.MirrorCreated.topic: {
                 let e = spec.events.MirrorCreated.decode(log)
-                NamedEntityBuffer.add<Publication>('PublicationCreated', {
+                NamedEntityBuffer.add<PublicationData>('PublicationCreated', {
                     id: toID(e[0], e[1]),
                     creatorId: e[0].toString(),
                     mirroredPubId: toID(e[2], e[3]),
@@ -53,7 +59,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
             }
             case spec.events.PostCreated.topic: {
                 let e = spec.events.PostCreated.decode(log)
-                NamedEntityBuffer.add<Publication>('PublicationCreated', {
+                NamedEntityBuffer.add<PublicationData>('PublicationCreated', {
                     id: toID(e[0], e[1]),
                     creatorId: e[0].toString(),
                     post: new Post({
@@ -79,7 +85,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
             }
             case spec.events.ProfileImageURISet.topic: {
                 let e = spec.events.ProfileImageURISet.decode(log)
-                NamedEntityBuffer.add<ProfileImageUpdate>('ProfileImageURISet', {
+                NamedEntityBuffer.add<ProfileImageUpdateData>('ProfileImageURISet', {
                     id: e[0].toString(),
                     imageUri: e[1],
                     updatedAt: toDate(e[2]),
@@ -98,8 +104,9 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     // load fetched entities from buffer
 
     const createdProfiles = NamedEntityBuffer.flush<Profile>('ProfileCreated')
-    const updatedProfiles = NamedEntityBuffer.flush<ProfileImageUpdate>('ProfileImageURISet')
-    const createdPublications = NamedEntityBuffer.flush<Publication>('PublicationCreated')
+    const updatedProfiles = NamedEntityBuffer.flush<ProfileImageUpdateData>('ProfileImageURISet')
+    const createdPublications = NamedEntityBuffer.flush<PublicationData>('PublicationCreated')
+    const createdCollects = NamedEntityBuffer.flush<CollectData>('PublicationCollected')
 
     // get ids used in entities
 
@@ -128,6 +135,13 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                 break
             }
         }
+    }
+
+    for (var collectData of createdCollects) {
+        profileIds.push(collectData.profileId)
+        profileIds.push(collectData.rootProfileId)
+        pubIds.push(collectData.pubId)
+        pubIds.push(collectData.rootPubId)
     }
 
     // load entities using gathered ids
@@ -257,6 +271,39 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                 break
             }
         }
+    }
+
+    for (var collectData of createdCollects) {
+        let commentedProfileEntity = profiles.get(collectData.profileId)
+        if (commentedProfileEntity == null) {
+            ctx.log.warn(`collected profile for collect is missing, collect: ${JSON.stringify(collectData)}`)
+            continue
+        }
+        let collectedPubEntity = pubs.get(collectData.pubId)
+        if (collectedPubEntity == null) {
+            ctx.log.warn(`collected publication for collect is missing, collect: ${JSON.stringify(collectData)}`)
+            continue
+        }
+        let commentedRootProfileEntity = profiles.get(collectData.rootProfileId)
+        if (commentedRootProfileEntity == null) {
+            ctx.log.warn(`collected root profile for collect is missing, collect: ${JSON.stringify(collectData)}`)
+            continue
+        }
+        let collectedRootPubEntity = pubs.get(collectData.rootPubId)
+        if (collectedRootPubEntity == null) {
+            ctx.log.warn(`collected root publication for collect is missing, collect: ${JSON.stringify(collectData)}`)
+            continue
+        }
+        let collectEntity = new Collect({
+            id: collectData.id,
+            collector: collectData.collector,
+            collectedCreator: commentedProfileEntity,
+            collectedPublication: collectedPubEntity,
+            collectedRootCreator: commentedRootProfileEntity,
+            collectedRootPublication: collectedRootPubEntity,
+            timestamp: collectData.timestamp
+        })
+        NamedEntityBuffer.add('Save', collectEntity)
     }
 
     const contents = await fetchContentBatch(ctx, contentUris.uris)

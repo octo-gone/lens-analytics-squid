@@ -1,5 +1,5 @@
-module.exports = class Data1694381419361 {
-    name = 'Data1694381419361'
+module.exports = class Data1694552890434 {
+    name = 'Data1694552890434'
 
     async up(db) {
         await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
@@ -21,6 +21,13 @@ module.exports = class Data1694381419361 {
         await db.query(`CREATE INDEX "IDX_e1eea55c5dc00feee13279e4cc" ON "profile" ("handle") `)
         await db.query(`CREATE INDEX "IDX_0ed669a723a2a49942d30301a0" ON "profile" ("created_at") `)
         await db.query(`CREATE INDEX "IDX_1ba9ea99166dd36c702f512930" ON "profile" ("updated_at") `)
+        await db.query(`CREATE TABLE "collect" ("id" character varying NOT NULL, "collector" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "collected_creator_id" character varying, "collected_publication_id" character varying, "collected_root_creator_id" character varying, "collected_root_publication_id" character varying, CONSTRAINT "PK_48dc0a6d1738eb0ee8f1e13d3d1" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_92cbba0a224e935d8a1ddca3e1" ON "collect" ("collector") `)
+        await db.query(`CREATE INDEX "IDX_52faaf00229800a6a8aafe4fa1" ON "collect" ("collected_creator_id") `)
+        await db.query(`CREATE INDEX "IDX_dc6686a309914a5b8da07752e1" ON "collect" ("collected_publication_id") `)
+        await db.query(`CREATE INDEX "IDX_f538104b0af9bf33281844848a" ON "collect" ("collected_root_creator_id") `)
+        await db.query(`CREATE INDEX "IDX_21897f95882fddfc8b58321f99" ON "collect" ("collected_root_publication_id") `)
+        await db.query(`CREATE INDEX "IDX_20e5bbb99bd24bead8e90c1814" ON "collect" ("timestamp") `)
         await db.query(`ALTER TABLE "mirror" ADD CONSTRAINT "FK_bd7df2937349fcbce9ec792ada1" FOREIGN KEY ("mirrored_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "mirror" ADD CONSTRAINT "FK_e4d9ffc54c3594135f98ee4c19d" FOREIGN KEY ("mirrored_publication_id") REFERENCES "publication_ref"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "comment" ADD CONSTRAINT "FK_1d9ca0edf55bf20f432c833f056" FOREIGN KEY ("commented_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -29,6 +36,10 @@ module.exports = class Data1694381419361 {
         await db.query(`ALTER TABLE "publication_ref" ADD CONSTRAINT "FK_baab7ed927f6da2aec78efaacf8" FOREIGN KEY ("post_id") REFERENCES "post"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "publication_ref" ADD CONSTRAINT "FK_a3f289268936a82b5754ff8c5db" FOREIGN KEY ("mirror_id") REFERENCES "mirror"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "publication_ref" ADD CONSTRAINT "FK_855d700f25c5a1da322a4d18b07" FOREIGN KEY ("comment_id") REFERENCES "comment"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_52faaf00229800a6a8aafe4fa1a" FOREIGN KEY ("collected_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_dc6686a309914a5b8da07752e1f" FOREIGN KEY ("collected_publication_id") REFERENCES "publication_ref"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_f538104b0af9bf33281844848a1" FOREIGN KEY ("collected_root_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_21897f95882fddfc8b58321f99b" FOREIGN KEY ("collected_root_publication_id") REFERENCES "publication_ref"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
     }
 
     async down(db) {
@@ -51,6 +62,13 @@ module.exports = class Data1694381419361 {
         await db.query(`DROP INDEX "public"."IDX_e1eea55c5dc00feee13279e4cc"`)
         await db.query(`DROP INDEX "public"."IDX_0ed669a723a2a49942d30301a0"`)
         await db.query(`DROP INDEX "public"."IDX_1ba9ea99166dd36c702f512930"`)
+        await db.query(`DROP TABLE "collect"`)
+        await db.query(`DROP INDEX "public"."IDX_92cbba0a224e935d8a1ddca3e1"`)
+        await db.query(`DROP INDEX "public"."IDX_52faaf00229800a6a8aafe4fa1"`)
+        await db.query(`DROP INDEX "public"."IDX_dc6686a309914a5b8da07752e1"`)
+        await db.query(`DROP INDEX "public"."IDX_f538104b0af9bf33281844848a"`)
+        await db.query(`DROP INDEX "public"."IDX_21897f95882fddfc8b58321f99"`)
+        await db.query(`DROP INDEX "public"."IDX_20e5bbb99bd24bead8e90c1814"`)
         await db.query(`ALTER TABLE "mirror" DROP CONSTRAINT "FK_bd7df2937349fcbce9ec792ada1"`)
         await db.query(`ALTER TABLE "mirror" DROP CONSTRAINT "FK_e4d9ffc54c3594135f98ee4c19d"`)
         await db.query(`ALTER TABLE "comment" DROP CONSTRAINT "FK_1d9ca0edf55bf20f432c833f056"`)
@@ -59,5 +77,9 @@ module.exports = class Data1694381419361 {
         await db.query(`ALTER TABLE "publication_ref" DROP CONSTRAINT "FK_baab7ed927f6da2aec78efaacf8"`)
         await db.query(`ALTER TABLE "publication_ref" DROP CONSTRAINT "FK_a3f289268936a82b5754ff8c5db"`)
         await db.query(`ALTER TABLE "publication_ref" DROP CONSTRAINT "FK_855d700f25c5a1da322a4d18b07"`)
+        await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_52faaf00229800a6a8aafe4fa1a"`)
+        await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_dc6686a309914a5b8da07752e1f"`)
+        await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_f538104b0af9bf33281844848a1"`)
+        await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_21897f95882fddfc8b58321f99b"`)
     }
 }

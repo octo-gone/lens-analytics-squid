@@ -13,10 +13,10 @@ export function removeBrokenSurrogate(x: string): [string, boolean] {
     return [x.replace(brokenSurrogateRegExp, '$1'), true]
 }
 
-export function toDate(value: bigint): Date {
+export function toDate(value: bigint | number): Date {
     return new Date(Number(value)*1000)
 }
 
-export function toID(profileId: bigint, pubId: bigint): string {
+export function toID(profileId: bigint | number, pubId: bigint | number): string {
     return `${profileId}_${pubId}`
 }

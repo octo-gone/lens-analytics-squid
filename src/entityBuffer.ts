@@ -48,6 +48,6 @@ export class NamedEntityBuffer {
     }
 }
 
-interface Entity {
+export interface Entity {
     id: string
 }

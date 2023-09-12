@@ -15,13 +15,6 @@ export const processor = new EvmBatchProcessor()
             topics: true,
             data: true,
             transactionHash: true,
-        },
-        transaction: {
-            hash: true,
-            input: true,
-            from: true,
-            value: true,
-            status: true,
         }
     })
     .setBlockRange({
