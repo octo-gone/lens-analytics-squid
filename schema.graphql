@@ -20,6 +20,8 @@ type PublicationRef @entity {
     post: Post @unique
     mirror: Mirror @unique
     comment: Comment @unique
+    collects: [Collect!] @derivedFrom(field: "collectedPublication")
+    rootCollects: [Collect!] @derivedFrom(field: "collectedRootPublication")
     timestamp: DateTime! @index
 }
 

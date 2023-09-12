@@ -1,9 +1,10 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_} from "typeorm"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_, OneToOne as OneToOne_, JoinColumn as JoinColumn_, OneToMany as OneToMany_} from "typeorm"
 import {Profile} from "./profile.model"
 import {PublicationVariant} from "./_publicationVariant"
 import {Post} from "./post.model"
 import {Mirror} from "./mirror.model"
 import {Comment} from "./comment.model"
+import {Collect} from "./collect.model"
 
 @Entity_()
 export class PublicationRef {
@@ -36,6 +37,12 @@ export class PublicationRef {
     @OneToOne_(() => Comment, {nullable: true})
     @JoinColumn_()
     comment!: Comment | undefined | null
+
+    @OneToMany_(() => Collect, e => e.collectedPublication)
+    collects!: Collect[]
+
+    @OneToMany_(() => Collect, e => e.collectedRootPublication)
+    rootCollects!: Collect[]
 
     @Index_()
     @Column_("timestamp with time zone", {nullable: false})
