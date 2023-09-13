@@ -1,4 +1,4 @@
-const brokenSurrogateRegExp = /[\ud800-\udbff]([^\udc00-\udfff])|([^\ud800-\udbff])[\udc00-\udfff]/g
+const brokenSurrogateRegExp = /[\ud800-\udbff]([^\udc00-\udfff]|$)|([^\ud800-\udbff]|^)[\udc00-\udfff]/g
 
 export function removeBrokenSurrogate(x: string): [string, boolean] {
     // for some reason someone removed low- and high-surrogate from UTF-16 character (emoji)
@@ -6,6 +6,7 @@ export function removeBrokenSurrogate(x: string): [string, boolean] {
     // examples:
     //   https://data.lens.phaver.com/api/lens/posts/21cb17c9-4b76-43b1-b782-0c6b075fa64e
     //   https://arweave.net/6ZURJHncx9y5Bj2JOtHYLuPoW45mMe6EZtW_6QfeXK0
+    //   https://data.lens.phaver.com/api/lens/posts/eb43c4c8-8e6f-40ae-abc9-42077a3c7729
     // info:
     //   https://datacadamia.com/data/type/text/surrogate
     if (!brokenSurrogateRegExp.test(x))
