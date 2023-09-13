@@ -29,11 +29,13 @@ export async function fetchContent(
         let data: any
         if (uri.startsWith('ipfs://')) {
             data = await ipfsClient.get('ipfs/' + uri.replace('ipfs://', ''))
+        } else if (uri.startsWith('ar://')) {
+            data = await httpClient.get('https://arweave.net/' + uri.replace('ar://', ''))
         } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
             if (uri.includes('ipfs/')) {
                 data = await ipfsClient.get('ipfs/' + ipfsCIDRegExp.exec(uri)![1])
             } else {
-                data = await httpClient.get(uri).catch(() => undefined)
+                data = await httpClient.get(uri).catch(() => null)
             }
         } else if (/^[a-zA-Z0-9]+$/.test(uri)) {
             data = await ipfsClient.get('ipfs/' + uri)
