@@ -15,10 +15,23 @@ export const processor = new EvmBatchProcessor()
             topics: true,
             data: true,
             transactionHash: true,
+        },
+        transaction: {
+            hash: true,
+            input: true,
+            from: true,
+            value: true,
+            status: true,
         }
     })
     .setBlockRange({
         from: 28_000_000
+    })
+    .addTransaction({
+        to: [lensProtocolAddress],
+        logs: true,
+        stateDiffs: false,
+        traces: false
     })
     .addLog({
         address: [lensProtocolAddress],

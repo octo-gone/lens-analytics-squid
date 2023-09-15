@@ -16,6 +16,10 @@ export class Collect {
     collector!: string
 
     @Index_()
+    @Column_("text", {nullable: false})
+    transactionHash!: string
+
+    @Index_()
     @ManyToOne_(() => Profile, {nullable: true})
     collectedCreator!: Profile
 

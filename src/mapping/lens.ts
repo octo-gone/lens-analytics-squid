@@ -18,6 +18,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                 NamedEntityBuffer.add<CollectData>('PublicationCollected', {
                     id: log.id,
                     collector: e[0],
+                    transactionHash: log.transactionHash,
                     profileId: e[1].toString(),
                     pubId: toID(e[1], e[2]),
                     rootProfileId: e[3].toString(),
@@ -297,6 +298,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         let collectEntity = new Collect({
             id: collectData.id,
             collector: collectData.collector,
+            transactionHash: collectData.transactionHash,
             collectedCreator: commentedProfileEntity,
             collectedPublication: collectedPubEntity,
             collectedRootCreator: commentedRootProfileEntity,

@@ -12,7 +12,7 @@ Links:
 ## Squid
 
 Links:
- - [🦑 GraphQL API](https://squid.subsquid.io/lens-protocol-explorer/v/v1/graphql)
+ - [🦑 GraphQL API](https://squid.subsquid.io/lens-protocol-explorer/v/v2/graphql)
 
 ## Usage
 

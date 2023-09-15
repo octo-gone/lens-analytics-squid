@@ -1,11 +1,16 @@
 manifestVersion: subsquid.io/v0.1
 name: lens-protocol-explorer
-version: 1
+version: 2
 description: Lens Protocol Explorer squid
+
 build:
+
 deploy:
   addons:
     postgres:
+      config:
+        statement_timeout: 100000
+        log_min_duration_statement: 100000
   secrets:
     - POLYGON_RPC_ENDPOINT
     - IPFS_BASE_URL
@@ -31,3 +36,8 @@ deploy:
       - '10'
       - '--max-response-size'
       - '1000'
+
+scale:
+  dedicated: true
+  processor:
+    profile: medium

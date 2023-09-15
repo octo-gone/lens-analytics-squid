@@ -14,6 +14,7 @@ export type PublicationData = (
 
 export type CollectData = {
     collector: string,
+    transactionHash: string,
     profileId: string,
     pubId: string,
     rootProfileId: string,

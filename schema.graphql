@@ -55,6 +55,7 @@ type Comment implements Publication @entity {
 type Collect @entity {
     id: ID!
     collector: String! @index
+    transactionHash: String! @index
     collectedCreator: Profile! @index
     collectedPublication: PublicationRef! @index
     collectedRootCreator: Profile! @index
