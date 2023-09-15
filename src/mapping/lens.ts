@@ -2,13 +2,15 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Store} from '../db'
 import {NamedEntityBuffer} from '../entityBuffer'
 import * as spec from '../abi/Lens'
-import {Log, lensProtocolAddress} from '../processor'
+import {Log} from '../processor'
 import {ProfileImageUpdateData, PublicationData, CollectData} from './types'
 import {In} from 'typeorm'
 import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile, Collect} from '../model'
 import {fetchContentBatch} from './ipfs'
 import {toID, toDate, removeBrokenSurrogate} from './utils'
 
+
+export const lensProtocolAddress = '0xdb46d1dc155634fbc732f92e853b10b288ad5a1d'
 
 export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
     try {
