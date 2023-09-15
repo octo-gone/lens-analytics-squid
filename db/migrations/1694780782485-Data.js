@@ -1,5 +1,5 @@
-module.exports = class Data1694553558996 {
-    name = 'Data1694553558996'
+module.exports = class Data1694780782485 {
+    name = 'Data1694780782485'
 
     async up(db) {
         await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
@@ -9,8 +9,9 @@ module.exports = class Data1694553558996 {
         await db.query(`CREATE TABLE "comment" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, "commented_creator_id" character varying, "commented_publication_id" character varying, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_1d9ca0edf55bf20f432c833f05" ON "comment" ("commented_creator_id") `)
         await db.query(`CREATE INDEX "IDX_c347365e78bd7ea7084bb871d1" ON "comment" ("commented_publication_id") `)
-        await db.query(`CREATE TABLE "collect" ("id" character varying NOT NULL, "collector" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "collected_creator_id" character varying, "collected_publication_id" character varying, "collected_root_creator_id" character varying, "collected_root_publication_id" character varying, CONSTRAINT "PK_48dc0a6d1738eb0ee8f1e13d3d1" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE TABLE "collect" ("id" character varying NOT NULL, "collector" text NOT NULL, "transaction_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "collected_creator_id" character varying, "collected_publication_id" character varying, "collected_root_creator_id" character varying, "collected_root_publication_id" character varying, CONSTRAINT "PK_48dc0a6d1738eb0ee8f1e13d3d1" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_92cbba0a224e935d8a1ddca3e1" ON "collect" ("collector") `)
+        await db.query(`CREATE INDEX "IDX_1722f920cca20ead801b734b40" ON "collect" ("transaction_hash") `)
         await db.query(`CREATE INDEX "IDX_52faaf00229800a6a8aafe4fa1" ON "collect" ("collected_creator_id") `)
         await db.query(`CREATE INDEX "IDX_dc6686a309914a5b8da07752e1" ON "collect" ("collected_publication_id") `)
         await db.query(`CREATE INDEX "IDX_f538104b0af9bf33281844848a" ON "collect" ("collected_root_creator_id") `)
@@ -52,6 +53,7 @@ module.exports = class Data1694553558996 {
         await db.query(`DROP INDEX "public"."IDX_c347365e78bd7ea7084bb871d1"`)
         await db.query(`DROP TABLE "collect"`)
         await db.query(`DROP INDEX "public"."IDX_92cbba0a224e935d8a1ddca3e1"`)
+        await db.query(`DROP INDEX "public"."IDX_1722f920cca20ead801b734b40"`)
         await db.query(`DROP INDEX "public"."IDX_52faaf00229800a6a8aafe4fa1"`)
         await db.query(`DROP INDEX "public"."IDX_dc6686a309914a5b8da07752e1"`)
         await db.query(`DROP INDEX "public"."IDX_f538104b0af9bf33281844848a"`)
