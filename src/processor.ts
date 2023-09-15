@@ -1,6 +1,7 @@
 import {EvmBatchProcessor, EvmBatchProcessorFields, BlockHeader, Log as _Log, Transaction as _Transaction} from '@subsquid/evm-processor'
 import {lookupArchive} from '@subsquid/archive-registry'
 import * as lensAbi from './abi/Lens'
+import * as lensHubAbi from './abi/LensHub'
 import {lensProtocolAddress} from './mapping/lens'
 
 
@@ -43,6 +44,7 @@ export const processor = new EvmBatchProcessor()
             lensAbi.events.PostCreated.topic,
             lensAbi.events.ProfileCreated.topic,
             lensAbi.events.ProfileImageURISet.topic,
+            lensHubAbi.events.Transfer.topic
         ],
     })
 

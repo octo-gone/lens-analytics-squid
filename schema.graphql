@@ -22,6 +22,7 @@ type PublicationRef @entity {
     comment: Comment @unique
     collects: [Collect!] @derivedFrom(field: "collectedPublication")
     rootCollects: [Collect!] @derivedFrom(field: "collectedRootPublication")
+    txHash: String! @index
     timestamp: DateTime! @index
 }
 
@@ -55,10 +56,37 @@ type Comment implements Publication @entity {
 type Collect @entity {
     id: ID!
     collector: String! @index
-    transactionHash: String! @index
     collectedCreator: Profile! @index
     collectedPublication: PublicationRef! @index
     collectedRootCreator: Profile! @index
     collectedRootPublication: PublicationRef! @index
+    txHash: String! @index
+    timestamp: DateTime! @index
+}
+
+type Follow @entity {
+    id: ID!
+    followerAddress: String! @index
+    profileIds: [String!]
+    followModuleDatas: [String!]
+    txHash: String! @index
+    timestamp: DateTime! @index
+}
+
+type ProfileTransfer @entity {
+    id: ID!
+    from: String! @index
+    to: String! @index
+    profile: Profile! @index
+    txHash: String! @index
+    timestamp: DateTime! @index
+}
+
+type ProfileImageUpdate @entity {
+    id: ID!
+    oldImageUri: String!
+    newImageUri: String!
+    profile: Profile! @index
+    txHash: String! @index
     timestamp: DateTime! @index
 }

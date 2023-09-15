@@ -45,6 +45,10 @@ export class PublicationRef {
     rootCollects!: Collect[]
 
     @Index_()
+    @Column_("text", {nullable: false})
+    txHash!: string
+
+    @Index_()
     @Column_("timestamp with time zone", {nullable: false})
     timestamp!: Date
 }

@@ -2,10 +2,11 @@ import {DataHandlerContext} from '@subsquid/evm-processor'
 import {Store} from '../db'
 import {NamedEntityBuffer} from '../entityBuffer'
 import * as spec from '../abi/Lens'
+import * as specHub from '../abi/LensHub'
 import {Log} from '../processor'
-import {ProfileImageUpdateData, PublicationData, CollectData} from './types'
+import {ProfileImageUpdateData, PublicationData, CollectData, ProfileTransferData} from './types'
 import {In} from 'typeorm'
-import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile, Collect} from '../model'
+import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile, Collect, Follow, ProfileTransfer, ProfileImageUpdate} from '../model'
 import {fetchContentBatch} from './ipfs'
 import {toID, toDate, removeBrokenSurrogate} from './utils'
 
@@ -20,7 +21,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                 NamedEntityBuffer.add<CollectData>('PublicationCollected', {
                     id: log.id,
                     collector: e[0],
-                    transactionHash: log.transactionHash,
+                    txHash: log.transactionHash,
                     profileId: e[1].toString(),
                     pubId: toID(e[1], e[2]),
                     rootProfileId: e[3].toString(),
@@ -41,8 +42,21 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                         contentUri: e[2]
                     }),
                     variant: PublicationVariant.COMMENT,
+                    txHash: log.transactionHash,
                     timestamp: toDate(e[10]),
                 })
+                break
+            }
+            case spec.events.Followed.topic: {
+                let e = spec.events.Followed.decode(log)
+                NamedEntityBuffer.add<Follow>('Save', new Follow({
+                    id: log.id,
+                    followerAddress: e[0],
+                    txHash: log.transactionHash,
+                    profileIds: e[1].map(x => x.toString()),
+                    followModuleDatas: e[2],
+                    timestamp: toDate(e[3]),
+                }))
                 break
             }
             case spec.events.MirrorCreated.topic: {
@@ -56,6 +70,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                         id: toID(e[0], e[1]),
                     }),
                     variant: PublicationVariant.MIRROR,
+                    txHash: log.transactionHash,
                     timestamp: toDate(e[7]),
                 })
                 break
@@ -70,6 +85,7 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
                         contentUri: e[2],
                     }),
                     variant: PublicationVariant.POST,
+                    txHash: log.transactionHash,
                     timestamp: toDate(e[7]),
                 })
                 break
@@ -89,9 +105,24 @@ export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
             case spec.events.ProfileImageURISet.topic: {
                 let e = spec.events.ProfileImageURISet.decode(log)
                 NamedEntityBuffer.add<ProfileImageUpdateData>('ProfileImageURISet', {
-                    id: e[0].toString(),
+                    id: log.id,
+                    profileId: e[0].toString(),
                     imageUri: e[1],
-                    updatedAt: toDate(e[2]),
+                    txHash: log.transactionHash,
+                    timestamp: toDate(e[2]),
+                })
+                break
+            }
+            case specHub.events.Transfer.topic: {
+                let e = specHub.events.Transfer.decode(log)
+                if (e[0] === '0x0000000000000000000000000000000000000000') break
+                NamedEntityBuffer.add<ProfileTransferData>('ProfileTransfered', {
+                    id: log.id,
+                    from: e[0],
+                    to: e[1],
+                    profileId: e[2].toString(),
+                    txHash: log.transactionHash,
+                    timestamp: new Date(log.block.timestamp),
                 })
                 break
             }
@@ -107,15 +138,17 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     // load fetched entities from buffer
 
     const createdProfiles = NamedEntityBuffer.flush<Profile>('ProfileCreated')
-    const updatedProfiles = NamedEntityBuffer.flush<ProfileImageUpdateData>('ProfileImageURISet')
+    const updatedProfileImages = NamedEntityBuffer.flush<ProfileImageUpdateData>('ProfileImageURISet')
     const createdPublications = NamedEntityBuffer.flush<PublicationData>('PublicationCreated')
     const createdCollects = NamedEntityBuffer.flush<CollectData>('PublicationCollected')
+    const transferedProfiles = NamedEntityBuffer.flush<ProfileTransferData>('ProfileTransfered')
 
     // get ids used in entities
 
     const profileIds = [
         ...createdProfiles.map(x => x.id),
-        ...updatedProfiles.map(x => x.id),
+        ...updatedProfileImages.map(x => x.profileId),
+        ...transferedProfiles.map(x => x.profileId)
     ]
     const pubIds: string[] = []
 
@@ -171,17 +204,45 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         profiles.set(profileEntity.id, profileEntity)
     }
 
-    for (var profile of updatedProfiles) {
-        let profileEntity = profiles.get(profile.id)
+    profiles.forEach(x => NamedEntityBuffer.add('Save', x))
+
+    for (var profileImageUpdate of updatedProfileImages) {
+        let profileEntity = profiles.get(profileImageUpdate.profileId)
         if (profileEntity == null) {
-            ctx.log.warn(`profile is missing, profile: ${JSON.stringify(profile)}`)
+            ctx.log.warn(`profile for image update is missing, profile: ${JSON.stringify(profileImageUpdate)}`)
             continue
         }
-        profileEntity.imageUri = profile.imageUri
-        profileEntity.updatedAt = profile.updatedAt
+        let profileImageUpdateEntity = new ProfileImageUpdate({
+            id: profileImageUpdate.id,
+            oldImageUri: profileEntity.imageUri,
+            newImageUri: profileImageUpdate.imageUri,
+            profile: profileEntity,
+            txHash: profileImageUpdate.txHash,
+            timestamp: profileImageUpdate.timestamp,
+        })
+        profileEntity.imageUri = profileImageUpdate.imageUri
+        profileEntity.updatedAt = profileImageUpdate.timestamp
+        NamedEntityBuffer.add('Save', profileImageUpdateEntity)
     }
 
-    profiles.forEach(x => NamedEntityBuffer.add('Save', x))
+    for (var profileTransfer of transferedProfiles) {
+        let transferedProfileEntity = profiles.get(profileTransfer.profileId)
+        if (transferedProfileEntity == null) {
+            ctx.log.warn(`transfered profile is missing, tranfer: ${JSON.stringify(profileTransfer)}`)
+            continue
+        }
+        let profileTransferEntity = new ProfileTransfer({
+            id: profileTransfer.id,
+            from: profileTransfer.from,
+            to: profileTransfer.to,
+            profile: transferedProfileEntity,
+            txHash: profileTransfer.txHash,
+            timestamp: profileTransfer.timestamp
+        })
+        transferedProfileEntity.address = profileTransfer.to
+        transferedProfileEntity.updatedAt = profileTransfer.timestamp
+        NamedEntityBuffer.add('Save', profileTransferEntity)
+    }
 
     // update publications
 
@@ -204,6 +265,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                     creator: creatorEntity,
                     variant: PublicationVariant.POST,
                     post: pubData.post,
+                    txHash: pubData.txHash,
                     timestamp: pubData.timestamp
                 })
                 pubs.set(pubEntity.id, pubEntity)
@@ -234,6 +296,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                     creator: creatorEntity,
                     variant: PublicationVariant.MIRROR,
                     mirror: pubData.mirror,
+                    txHash: pubData.txHash,
                     timestamp: pubData.timestamp
                 })
                 pubs.set(pubEntity.id, pubEntity)
@@ -266,6 +329,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
                     creator: creatorEntity,
                     variant: PublicationVariant.COMMENT,
                     comment: pubData.comment,
+                    txHash: pubData.txHash,
                     timestamp: pubData.timestamp
                 })
                 pubs.set(pubEntity.id, pubEntity)
@@ -300,11 +364,11 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         let collectEntity = new Collect({
             id: collectData.id,
             collector: collectData.collector,
-            transactionHash: collectData.transactionHash,
             collectedCreator: commentedProfileEntity,
             collectedPublication: collectedPubEntity,
             collectedRootCreator: commentedRootProfileEntity,
             collectedRootPublication: collectedRootPubEntity,
+            txHash: collectData.txHash,
             timestamp: collectData.timestamp
         })
         NamedEntityBuffer.add('Save', collectEntity)

@@ -1,10 +1,9 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, Index as Index_, ManyToOne as ManyToOne_} from "typeorm"
 import {Profile} from "./profile.model"
-import {PublicationRef} from "./publicationRef.model"
 
 @Entity_()
-export class Collect {
-    constructor(props?: Partial<Collect>) {
+export class ProfileTransfer {
+    constructor(props?: Partial<ProfileTransfer>) {
         Object.assign(this, props)
     }
 
@@ -13,23 +12,15 @@ export class Collect {
 
     @Index_()
     @Column_("text", {nullable: false})
-    collector!: string
+    from!: string
+
+    @Index_()
+    @Column_("text", {nullable: false})
+    to!: string
 
     @Index_()
     @ManyToOne_(() => Profile, {nullable: true})
-    collectedCreator!: Profile
-
-    @Index_()
-    @ManyToOne_(() => PublicationRef, {nullable: true})
-    collectedPublication!: PublicationRef
-
-    @Index_()
-    @ManyToOne_(() => Profile, {nullable: true})
-    collectedRootCreator!: Profile
-
-    @Index_()
-    @ManyToOne_(() => PublicationRef, {nullable: true})
-    collectedRootPublication!: PublicationRef
+    profile!: Profile
 
     @Index_()
     @Column_("text", {nullable: false})

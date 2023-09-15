@@ -6,4 +6,8 @@ contracts:
     address: "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d"
     abi: ./assets/Lens.json
     events: true
+  - name: LensHub
+    address: "0xBA97fc9137b7cbBBC7fcB70a87DA645d917C902F"
+    abi: ./assets/LensHub.jso
+    events: true
 etherscanApi: https://api.polygonscan.com
