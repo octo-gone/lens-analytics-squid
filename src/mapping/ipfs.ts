@@ -20,6 +20,7 @@ const httpClient = new HttpClient({
 })
 
 const ipfsCIDRegExp = /^\S*(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/
+const dataRegExp = /^data:(.*?),(.*)$/
 
 export async function fetchContent(
     ctx: DataHandlerContext<Store>,
@@ -27,10 +28,47 @@ export async function fetchContent(
 ): Promise<any | null> {
     try {
         let data: any
+
+        let rawData = dataRegExp.exec(uri)
+        if (rawData != null) {
+            let mimeType: string
+            [mimeType, data] = [rawData[1], rawData[2]]
+            let decodedData = decodeURI(uri)
+            switch (mimeType) {
+                case '': {
+                    data = JSON.parse(decodedData)
+                    if (data === undefined)
+                        data = {content: decodedData}
+                    break
+                }
+                case 'application/json': {
+                    data = JSON.parse(decodedData)
+                    if (data === undefined)
+                        data = {content: decodedData}
+                    break
+                }
+                case 'text/plain': {
+                    data = JSON.parse(uri)
+                    if (data === undefined)
+                        data = {content: uri}
+                    break
+                }
+            }
+            return data
+        }
+
         if (uri.startsWith('ipfs://')) {
-            data = await ipfsClient.get('ipfs/' + uri.replace('ipfs://', ''))
+            let path = uri.replace('ipfs://', '')
+            if (path === 'undefined')
+                return null
+            if (uri.includes('ipfs/'))
+                path = uri.replace('ipfs/', '')
+            data = await ipfsClient.get('ipfs/' + path)
         } else if (uri.startsWith('ar://')) {
-            data = await httpClient.get('https://arweave.net/' + uri.replace('ar://', ''))
+            let path = uri.replace('ar://', '')
+            if (path === 'undefined' || path === 'false')
+                return null
+            data = await httpClient.get('https://arweave.net/' + path)
         } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
             if (uri.includes('ipfs/')) {
                 data = await ipfsClient.get('ipfs/' + ipfsCIDRegExp.exec(uri)![1])
@@ -39,6 +77,8 @@ export async function fetchContent(
             }
         } else if (/^[a-zA-Z0-9]+$/.test(uri)) {
             data = await ipfsClient.get('ipfs/' + uri)
+        } else if (uri === '') {
+            return null
         } else {
             throw new Error(`unexpected url "${uri}"`)
         }

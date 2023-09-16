@@ -8,6 +8,9 @@ Links:
 - [🌿 Lens Protocol Docs](https://docs.lens.xyz/docs)
   - [Deployed Contract Addresses](https://docs.lens.xyz/docs/deployed-contract-addresses)
   - [Events](https://docs.lens.xyz/docs/events)
+- [Polygonscan]()
+  - [Lens Profile Token Tracker](https://polygonscan.com/token/0xdb46d1dc155634fbc732f92e853b10b288ad5a1d)
+  - [Lens Contract Address](https://polygonscan.com/address/0xdb46d1dc155634fbc732f92e853b10b288ad5a1d)
 
 ## Squid
 
@@ -41,9 +44,11 @@ Links:
 
 ## Example queries
 
+Last 10 publications
+
 ```gql
-query MyQuery {
-  publications(limit: 10, orderBy: ref_timestamp_ASC) {
+query {
+  publications(limit: 10, orderBy: ref_timestamp_DESC) {
     ref {
       variant
       timestamp
@@ -76,6 +81,37 @@ query MyQuery {
       }
       contentUri
     }
+  }
+}
+```
+
+All Profile Transfers for user with ID `1862`
+
+```gql
+query {
+  profileTransfers(where: {profile: {id_eq: "1862"}}, limit: 10) {
+    id
+    profile {
+      address
+    }
+    from
+    to
+    txHash
+    timestamp
+  }
+}
+```
+
+All Profile Image updates for use with ID `1862`
+
+```gql
+query {
+  profileImageUpdates(limit: 10, where: {profile: {id_eq: "1862"}}) {
+    id
+    oldImageUri
+    newImageUri
+    txHash
+    timestamp
   }
 }
 ```
