@@ -374,6 +374,8 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         NamedEntityBuffer.add('Save', collectEntity)
     }
 
+    if (process.env.DONT_FETCH_CONTENT !== undefined) return
+
     const contents = await fetchContentBatch(ctx, contentUris.uris)
     contentUris.pubs.forEach((pubEntity, index) => {
         if (contents[index] == null) return

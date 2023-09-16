@@ -17,6 +17,7 @@ deploy:
   processor:
     env:
       IPFS_BATCH_SIZE: 150
+      DONT_FETCH_CONTENT: true
     cmd:
       - node
       - lib/main
