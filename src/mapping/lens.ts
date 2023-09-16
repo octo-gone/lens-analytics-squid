@@ -382,7 +382,6 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         for (let field of ['name', 'description', 'content']) {
             let [text, removed] = removeBrokenSurrogate(contents[index][field] || '')
             if (removed) {
-                ctx.log.info(`broken surrogate removed from content, content: ${JSON.stringify(contents[index])}`)
                 contents[index][field] = text
             }
         }
