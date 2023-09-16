@@ -14,10 +14,10 @@ deploy:
   secrets:
     - POLYGON_RPC_ENDPOINT
     - IPFS_BASE_URL
+    - RESERVE_IPFS_BASE_URL
   processor:
     env:
       IPFS_BATCH_SIZE: 150
-      DONT_FETCH_CONTENT: true
     cmd:
       - node
       - lib/main

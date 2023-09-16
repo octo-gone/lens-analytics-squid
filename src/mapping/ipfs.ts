@@ -12,6 +12,14 @@ const ipfsClient = new HttpClient({
     retryAttempts: 3,
 })
 
+const reserveIpfsClient = new HttpClient({
+    baseUrl: process.env.RESERVE_IPFS_BASE_URL,
+    headers: {
+        'content-type': 'application/json',
+    },
+    retryAttempts: 3,
+})
+
 const httpClient = new HttpClient({
     headers: {
         'content-type': 'application/json',
@@ -21,6 +29,16 @@ const httpClient = new HttpClient({
 
 const ipfsCIDRegExp = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/
 const dataRegExp = /^data:(.*?),(.*)$/
+
+
+async function fetchIpfs(uri: string): Promise<any | null> {
+    try {
+        return await ipfsClient.get(uri)
+    } catch {
+        return await reserveIpfsClient.get(uri)
+    }
+}
+
 
 export async function fetchContent(
     ctx: DataHandlerContext<Store>,
@@ -63,7 +81,7 @@ export async function fetchContent(
                 return null
             if (uri.includes('ipfs/'))
                 path = uri.replace('ipfs/', '')
-            data = await ipfsClient.get('ipfs/' + path)
+            data = await fetchIpfs('ipfs/' + path)
         } else if (uri.startsWith('ar://')) {
             let path = uri.replace('ar://', '')
             if (path === 'undefined' || path === 'false')
@@ -71,12 +89,12 @@ export async function fetchContent(
             data = await httpClient.get('https://arweave.net/' + path)
         } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
             if (uri.includes('ipfs/')) {
-                data = await ipfsClient.get(/ipfs\/(.*)/.exec(uri)![0])
+                data = await fetchIpfs(/ipfs\/(.*)/.exec(uri)![0])
             } else {
                 data = await httpClient.get(uri).catch(() => null)
             }
         } else if (/^[a-zA-Z0-9]+$/.test(uri)) {
-            data = await ipfsClient.get('ipfs/' + uri)
+            data = await fetchIpfs('ipfs/' + uri)
         } else if (uri === '') {
             return null
         } else {
