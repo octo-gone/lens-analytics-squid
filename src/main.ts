@@ -1,4 +1,4 @@
-import {lens} from './mapping'
+import {counter, lens} from './mapping'
 import {processor} from './processor'
 import {db} from './db'
 import {NamedEntityBuffer} from './entityBuffer'

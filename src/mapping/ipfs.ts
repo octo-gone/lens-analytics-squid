@@ -19,7 +19,7 @@ const httpClient = new HttpClient({
     retryAttempts: 3,
 })
 
-const ipfsCIDRegExp = /^\S*(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/
+const ipfsCIDRegExp = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|b[A-Za-z2-7]{58,}|B[A-Z2-7]{58,}|z[1-9A-HJ-NP-Za-km-z]{48,}|F[0-9A-F]{50,})$/
 const dataRegExp = /^data:(.*?),(.*)$/
 
 export async function fetchContent(
@@ -30,7 +30,7 @@ export async function fetchContent(
         let data: any
 
         let rawData = dataRegExp.exec(uri)
-        if (rawData != null) {
+        if (rawData !== null) {
             let mimeType: string
             [mimeType, data] = [rawData[1], rawData[2]]
             let decodedData = decodeURI(uri)
@@ -71,7 +71,7 @@ export async function fetchContent(
             data = await httpClient.get('https://arweave.net/' + path)
         } else if (uri.startsWith('http://') || uri.startsWith('https://')) {
             if (uri.includes('ipfs/')) {
-                data = await ipfsClient.get('ipfs/' + ipfsCIDRegExp.exec(uri)![1])
+                data = await ipfsClient.get(/ipfs\/(.*)/.exec(uri)![0])
             } else {
                 data = await httpClient.get(uri).catch(() => null)
             }
