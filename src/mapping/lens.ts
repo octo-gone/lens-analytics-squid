@@ -152,7 +152,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     ]
     const pubIds: string[] = []
 
-    for (var pubData of createdPublications) {
+    for (let pubData of createdPublications) {
         switch (pubData.variant) {
             case PublicationVariant.POST: {
                 profileIds.push(pubData.creatorId)
@@ -173,7 +173,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         }
     }
 
-    for (var collectData of createdCollects) {
+    for (let collectData of createdCollects) {
         profileIds.push(collectData.profileId)
         profileIds.push(collectData.rootProfileId)
         pubIds.push(collectData.pubId)
@@ -200,13 +200,13 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
 
     // update profiles
 
-    for (var profileEntity of createdProfiles) {
+    for (let profileEntity of createdProfiles) {
         profiles.set(profileEntity.id, profileEntity)
     }
 
     profiles.forEach(x => NamedEntityBuffer.add('Save', x))
 
-    for (var profileImageUpdate of updatedProfileImages) {
+    for (let profileImageUpdate of updatedProfileImages) {
         let profileEntity = profiles.get(profileImageUpdate.profileId)
         if (profileEntity == null) {
             ctx.log.warn(`profile for image update is missing, profile: ${JSON.stringify(profileImageUpdate)}`)
@@ -225,7 +225,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         NamedEntityBuffer.add('Save', profileImageUpdateEntity)
     }
 
-    for (var profileTransfer of transferedProfiles) {
+    for (let profileTransfer of transferedProfiles) {
         let transferedProfileEntity = profiles.get(profileTransfer.profileId)
         if (transferedProfileEntity == null) {
             ctx.log.warn(`transfered profile is missing, tranfer: ${JSON.stringify(profileTransfer)}`)
@@ -247,7 +247,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     // update publications
 
     const contentUris: {pubs: (Post | Comment)[], uris: string[]} = {pubs: [], uris: []}
-    for (var pubData of createdPublications.sort(
+    for (let pubData of createdPublications.sort(
         // sort by timestamp for correct entity insertion order
         (a, b) => (a.timestamp < b.timestamp ? -1 : 1))
     ) {
@@ -340,7 +340,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         }
     }
 
-    for (var collectData of createdCollects) {
+    for (let collectData of createdCollects) {
         let commentedProfileEntity = profiles.get(collectData.profileId)
         if (commentedProfileEntity == null) {
             ctx.log.warn(`collected profile for collect is missing, collect: ${JSON.stringify(collectData)}`)
@@ -379,7 +379,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
     const contents = await fetchContentBatch(ctx, contentUris.uris)
     contentUris.pubs.forEach((pubEntity, index) => {
         if (contents[index] == null) return
-        for (var field of ['name', 'description', 'content']) {
+        for (let field of ['name', 'description', 'content']) {
             let [text, removed] = removeBrokenSurrogate(contents[index][field] || '')
             if (removed) {
                 ctx.log.info(`broken surrogate removed from content, content: ${JSON.stringify(contents[index])}`)

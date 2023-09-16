@@ -49,30 +49,14 @@ export async function fetchContent(
 
         let rawData = dataRegExp.exec(uri)
         if (rawData !== null) {
-            let mimeType: string
-            [mimeType, data] = [rawData[1], rawData[2]]
-            let decodedData = decodeURI(uri)
-            switch (mimeType) {
-                case '': {
-                    data = JSON.parse(decodedData)
-                    if (data === undefined)
-                        data = {content: decodedData}
-                    break
-                }
-                case 'application/json': {
-                    data = JSON.parse(decodedData)
-                    if (data === undefined)
-                        data = {content: decodedData}
-                    break
-                }
-                case 'text/plain': {
-                    data = JSON.parse(uri)
-                    if (data === undefined)
-                        data = {content: uri}
-                    break
-                }
+            let [_, mimeData] = [rawData[1], rawData[2]]
+            let decodedData = decodeURIComponent(mimeData)
+            console.log(decodedData)
+            try {
+                data = JSON.parse(decodedData)
+            } catch {
+                data = {content: decodedData}
             }
-            return data
         }
 
         if (uri.startsWith('ipfs://')) {
