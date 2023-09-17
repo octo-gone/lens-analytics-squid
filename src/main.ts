@@ -9,14 +9,14 @@ processor.run(db, async (ctx) => {
         for (let log of block.logs) {
             switch (log.address) {
                 case lens.lensProtocolAddress: {
-                    lens.parseEvent(ctx, log)
+                    lens.parse.parseEvent(ctx, log)
                     break
                 }
             }
         }
     }
 
-    await lens.mergeData(ctx)
+    await lens.merge.mergeData(ctx)
 
     for (let entities of NamedEntityBuffer.flush("Save")) {
         await ctx.store.save(entities)

@@ -2,6 +2,7 @@ import {DataHandlerContext} from '@subsquid/evm-processor';
 import {Store} from '../db'
 import {HttpClient} from '@subsquid/util-internal-http-client'
 
+
 const IPFS_BATCH_SIZE = process.env.IPFS_BATCH_SIZE != undefined ? Number(process.env.IPFS_BATCH_SIZE) : 150
 
 const ipfsClient = new HttpClient({
@@ -57,6 +58,7 @@ export async function fetchContent(
             } catch {
                 data = {content: decodedData}
             }
+            return data
         }
 
         if (uri.startsWith('ipfs://')) {

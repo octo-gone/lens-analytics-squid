@@ -15,7 +15,7 @@ export type PublicationData = (
 ) & {creatorId: string, txHash: string, timestamp: Date} & Entity
 
 export type CollectData = {
-    collector: string,
+    nftOwnerAddress: string,
     profileId: string,
     pubId: string,
     rootProfileId: string,

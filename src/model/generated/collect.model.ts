@@ -13,7 +13,11 @@ export class Collect {
 
     @Index_()
     @Column_("text", {nullable: false})
-    collector!: string
+    nftOwnerAddress!: string
+
+    @Index_()
+    @ManyToOne_(() => Profile, {nullable: true})
+    collector!: Profile | undefined | null
 
     @Index_()
     @ManyToOne_(() => Profile, {nullable: true})

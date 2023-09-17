@@ -1,5 +1,5 @@
-module.exports = class Data1694808077146 {
-    name = 'Data1694808077146'
+module.exports = class Data1694941385245 {
+    name = 'Data1694941385245'
 
     async up(db) {
         await db.query(`CREATE TABLE "post" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, CONSTRAINT "PK_be5fda3aac270b134ff9c21cdee" PRIMARY KEY ("id"))`)
@@ -9,8 +9,9 @@ module.exports = class Data1694808077146 {
         await db.query(`CREATE TABLE "comment" ("id" character varying NOT NULL, "content_uri" text NOT NULL, "content" jsonb, "commented_creator_id" character varying, "commented_publication_id" character varying, CONSTRAINT "PK_0b0e4bbc8415ec426f87f3a88e2" PRIMARY KEY ("id"))`)
         await db.query(`CREATE INDEX "IDX_1d9ca0edf55bf20f432c833f05" ON "comment" ("commented_creator_id") `)
         await db.query(`CREATE INDEX "IDX_c347365e78bd7ea7084bb871d1" ON "comment" ("commented_publication_id") `)
-        await db.query(`CREATE TABLE "collect" ("id" character varying NOT NULL, "collector" text NOT NULL, "tx_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "collected_creator_id" character varying, "collected_publication_id" character varying, "collected_root_creator_id" character varying, "collected_root_publication_id" character varying, CONSTRAINT "PK_48dc0a6d1738eb0ee8f1e13d3d1" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE INDEX "IDX_92cbba0a224e935d8a1ddca3e1" ON "collect" ("collector") `)
+        await db.query(`CREATE TABLE "collect" ("id" character varying NOT NULL, "nft_owner_address" text NOT NULL, "tx_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "collector_id" character varying, "collected_creator_id" character varying, "collected_publication_id" character varying, "collected_root_creator_id" character varying, "collected_root_publication_id" character varying, CONSTRAINT "PK_48dc0a6d1738eb0ee8f1e13d3d1" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_e5eb8798c52c2014c6241e0726" ON "collect" ("nft_owner_address") `)
+        await db.query(`CREATE INDEX "IDX_085b3bf104033de7d1471f1f4f" ON "collect" ("collector_id") `)
         await db.query(`CREATE INDEX "IDX_52faaf00229800a6a8aafe4fa1" ON "collect" ("collected_creator_id") `)
         await db.query(`CREATE INDEX "IDX_dc6686a309914a5b8da07752e1" ON "collect" ("collected_publication_id") `)
         await db.query(`CREATE INDEX "IDX_f538104b0af9bf33281844848a" ON "collect" ("collected_root_creator_id") `)
@@ -30,8 +31,8 @@ module.exports = class Data1694808077146 {
         await db.query(`CREATE INDEX "IDX_e1eea55c5dc00feee13279e4cc" ON "profile" ("handle") `)
         await db.query(`CREATE INDEX "IDX_0ed669a723a2a49942d30301a0" ON "profile" ("created_at") `)
         await db.query(`CREATE INDEX "IDX_1ba9ea99166dd36c702f512930" ON "profile" ("updated_at") `)
-        await db.query(`CREATE TABLE "follow" ("id" character varying NOT NULL, "follower_address" text NOT NULL, "profile_ids" text array, "follow_module_datas" text array, "tx_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_fda88bc28a84d2d6d06e19df6e5" PRIMARY KEY ("id"))`)
-        await db.query(`CREATE INDEX "IDX_b0721bf62c56b44978483f8893" ON "follow" ("follower_address") `)
+        await db.query(`CREATE TABLE "follow" ("id" character varying NOT NULL, "nft_owner_address" text NOT NULL, "profile_ids" text array, "follow_module_datas" text array, "tx_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, CONSTRAINT "PK_fda88bc28a84d2d6d06e19df6e5" PRIMARY KEY ("id"))`)
+        await db.query(`CREATE INDEX "IDX_673fb43a6901c97ebcb0b6b8b1" ON "follow" ("nft_owner_address") `)
         await db.query(`CREATE INDEX "IDX_7ffde482fe3e5fac567d7997e4" ON "follow" ("tx_hash") `)
         await db.query(`CREATE INDEX "IDX_691a2347f6876e8b22cda3017e" ON "follow" ("timestamp") `)
         await db.query(`CREATE TABLE "profile_transfer" ("id" character varying NOT NULL, "from" text NOT NULL, "to" text NOT NULL, "tx_hash" text NOT NULL, "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL, "profile_id" character varying, CONSTRAINT "PK_70481bd2e9a26dcaac487ccc951" PRIMARY KEY ("id"))`)
@@ -48,6 +49,7 @@ module.exports = class Data1694808077146 {
         await db.query(`ALTER TABLE "mirror" ADD CONSTRAINT "FK_e4d9ffc54c3594135f98ee4c19d" FOREIGN KEY ("mirrored_publication_id") REFERENCES "publication_ref"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "comment" ADD CONSTRAINT "FK_1d9ca0edf55bf20f432c833f056" FOREIGN KEY ("commented_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "comment" ADD CONSTRAINT "FK_c347365e78bd7ea7084bb871d1f" FOREIGN KEY ("commented_publication_id") REFERENCES "publication_ref"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
+        await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_085b3bf104033de7d1471f1f4f5" FOREIGN KEY ("collector_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_52faaf00229800a6a8aafe4fa1a" FOREIGN KEY ("collected_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_dc6686a309914a5b8da07752e1f" FOREIGN KEY ("collected_publication_id") REFERENCES "publication_ref"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
         await db.query(`ALTER TABLE "collect" ADD CONSTRAINT "FK_f538104b0af9bf33281844848a1" FOREIGN KEY ("collected_root_creator_id") REFERENCES "profile"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`)
@@ -69,7 +71,8 @@ module.exports = class Data1694808077146 {
         await db.query(`DROP INDEX "public"."IDX_1d9ca0edf55bf20f432c833f05"`)
         await db.query(`DROP INDEX "public"."IDX_c347365e78bd7ea7084bb871d1"`)
         await db.query(`DROP TABLE "collect"`)
-        await db.query(`DROP INDEX "public"."IDX_92cbba0a224e935d8a1ddca3e1"`)
+        await db.query(`DROP INDEX "public"."IDX_e5eb8798c52c2014c6241e0726"`)
+        await db.query(`DROP INDEX "public"."IDX_085b3bf104033de7d1471f1f4f"`)
         await db.query(`DROP INDEX "public"."IDX_52faaf00229800a6a8aafe4fa1"`)
         await db.query(`DROP INDEX "public"."IDX_dc6686a309914a5b8da07752e1"`)
         await db.query(`DROP INDEX "public"."IDX_f538104b0af9bf33281844848a"`)
@@ -90,7 +93,7 @@ module.exports = class Data1694808077146 {
         await db.query(`DROP INDEX "public"."IDX_0ed669a723a2a49942d30301a0"`)
         await db.query(`DROP INDEX "public"."IDX_1ba9ea99166dd36c702f512930"`)
         await db.query(`DROP TABLE "follow"`)
-        await db.query(`DROP INDEX "public"."IDX_b0721bf62c56b44978483f8893"`)
+        await db.query(`DROP INDEX "public"."IDX_673fb43a6901c97ebcb0b6b8b1"`)
         await db.query(`DROP INDEX "public"."IDX_7ffde482fe3e5fac567d7997e4"`)
         await db.query(`DROP INDEX "public"."IDX_691a2347f6876e8b22cda3017e"`)
         await db.query(`DROP TABLE "profile_transfer"`)
@@ -107,6 +110,7 @@ module.exports = class Data1694808077146 {
         await db.query(`ALTER TABLE "mirror" DROP CONSTRAINT "FK_e4d9ffc54c3594135f98ee4c19d"`)
         await db.query(`ALTER TABLE "comment" DROP CONSTRAINT "FK_1d9ca0edf55bf20f432c833f056"`)
         await db.query(`ALTER TABLE "comment" DROP CONSTRAINT "FK_c347365e78bd7ea7084bb871d1f"`)
+        await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_085b3bf104033de7d1471f1f4f5"`)
         await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_52faaf00229800a6a8aafe4fa1a"`)
         await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_dc6686a309914a5b8da07752e1f"`)
         await db.query(`ALTER TABLE "collect" DROP CONSTRAINT "FK_f538104b0af9bf33281844848a1"`)

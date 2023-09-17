@@ -11,7 +11,7 @@ export class Follow {
 
     @Index_()
     @Column_("text", {nullable: false})
-    followerAddress!: string
+    nftOwnerAddress!: string
 
     @Column_("text", {array: true, nullable: true})
     profileIds!: (string)[] | undefined | null

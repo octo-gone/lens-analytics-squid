@@ -55,7 +55,8 @@ type Comment implements Publication @entity {
 
 type Collect @entity {
     id: ID!
-    collector: String! @index
+    nftOwnerAddress: String! @index
+    collector: Profile @index
     collectedCreator: Profile! @index
     collectedPublication: PublicationRef! @index
     collectedRootCreator: Profile! @index
@@ -66,7 +67,8 @@ type Collect @entity {
 
 type Follow @entity {
     id: ID!
-    followerAddress: String! @index
+    nftOwnerAddress: String! @index
+    # follower: Profile! @index
     profileIds: [String!]
     followModuleDatas: [String!]
     txHash: String! @index

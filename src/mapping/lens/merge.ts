@@ -1,137 +1,11 @@
 import {DataHandlerContext} from '@subsquid/evm-processor'
-import {Store} from '../db'
-import {NamedEntityBuffer} from '../entityBuffer'
-import * as spec from '../abi/Lens'
-import * as specHub from '../abi/LensHub'
-import {Log} from '../processor'
-import {ProfileImageUpdateData, PublicationData, CollectData, ProfileTransferData} from './types'
+import {Store} from '../../db'
+import {NamedEntityBuffer} from '../../entityBuffer'
+import {ProfileImageUpdateData, PublicationData, CollectData, ProfileTransferData} from '../types'
 import {In} from 'typeorm'
-import {Mirror, Post, Comment, PublicationVariant, PublicationRef, Profile, Collect, Follow, ProfileTransfer, ProfileImageUpdate} from '../model'
-import {fetchContentBatch} from './ipfs'
-import {toID, toDate, removeBrokenSurrogate} from './utils'
-
-
-export const lensProtocolAddress = '0xdb46d1dc155634fbc732f92e853b10b288ad5a1d'
-
-export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
-    try {
-        switch (log.topics[0]) {
-            case spec.events.Collected.topic: {
-                let e = spec.events.Collected.decode(log)
-                NamedEntityBuffer.add<CollectData>('PublicationCollected', {
-                    id: log.id,
-                    collector: e[0],
-                    txHash: log.transactionHash,
-                    profileId: e[1].toString(),
-                    pubId: toID(e[1], e[2]),
-                    rootProfileId: e[3].toString(),
-                    rootPubId: toID(e[3], e[4]),
-                    timestamp: toDate(e[6]),
-                })
-                break
-            }
-            case spec.events.CommentCreated.topic: {
-                let e = spec.events.CommentCreated.decode(log)
-                NamedEntityBuffer.add<PublicationData>('PublicationCreated', {
-                    id: toID(e[0], e[1]),
-                    creatorId: e[0].toString(),
-                    commentedPubId: toID(e[3], e[4]),
-                    commentedProfileId: e[3].toString(),
-                    comment: new Comment({
-                        id: toID(e[0], e[1]),
-                        contentUri: e[2]
-                    }),
-                    variant: PublicationVariant.COMMENT,
-                    txHash: log.transactionHash,
-                    timestamp: toDate(e[10]),
-                })
-                break
-            }
-            case spec.events.Followed.topic: {
-                let e = spec.events.Followed.decode(log)
-                NamedEntityBuffer.add<Follow>('Save', new Follow({
-                    id: log.id,
-                    followerAddress: e[0],
-                    txHash: log.transactionHash,
-                    profileIds: e[1].map(x => x.toString()),
-                    followModuleDatas: e[2],
-                    timestamp: toDate(e[3]),
-                }))
-                break
-            }
-            case spec.events.MirrorCreated.topic: {
-                let e = spec.events.MirrorCreated.decode(log)
-                NamedEntityBuffer.add<PublicationData>('PublicationCreated', {
-                    id: toID(e[0], e[1]),
-                    creatorId: e[0].toString(),
-                    mirroredPubId: toID(e[2], e[3]),
-                    mirroredProfileId: e[2].toString(),
-                    mirror: new Mirror({
-                        id: toID(e[0], e[1]),
-                    }),
-                    variant: PublicationVariant.MIRROR,
-                    txHash: log.transactionHash,
-                    timestamp: toDate(e[7]),
-                })
-                break
-            }
-            case spec.events.PostCreated.topic: {
-                let e = spec.events.PostCreated.decode(log)
-                NamedEntityBuffer.add<PublicationData>('PublicationCreated', {
-                    id: toID(e[0], e[1]),
-                    creatorId: e[0].toString(),
-                    post: new Post({
-                        id: toID(e[0], e[1]),
-                        contentUri: e[2],
-                    }),
-                    variant: PublicationVariant.POST,
-                    txHash: log.transactionHash,
-                    timestamp: toDate(e[7]),
-                })
-                break
-            }
-            case spec.events.ProfileCreated.topic: {
-                let e = spec.events.ProfileCreated.decode(log)
-                NamedEntityBuffer.add('ProfileCreated', new Profile({
-                    id: e[0].toString(),
-                    address: e[2],
-                    handle: e[3],
-                    imageUri: e[4],
-                    createdAt: toDate(e[8]),
-                    updatedAt: toDate(e[8]),
-                }))
-                break
-            }
-            case spec.events.ProfileImageURISet.topic: {
-                let e = spec.events.ProfileImageURISet.decode(log)
-                NamedEntityBuffer.add<ProfileImageUpdateData>('ProfileImageURISet', {
-                    id: log.id,
-                    profileId: e[0].toString(),
-                    imageUri: e[1],
-                    txHash: log.transactionHash,
-                    timestamp: toDate(e[2]),
-                })
-                break
-            }
-            case specHub.events.Transfer.topic: {
-                let e = specHub.events.Transfer.decode(log)
-                if (e[0] === '0x0000000000000000000000000000000000000000') break
-                NamedEntityBuffer.add<ProfileTransferData>('ProfileTransfered', {
-                    id: log.id,
-                    from: e[0],
-                    to: e[1],
-                    profileId: e[2].toString(),
-                    txHash: log.transactionHash,
-                    timestamp: new Date(log.block.timestamp),
-                })
-                break
-            }
-        }
-    }
-    catch (error) {
-        ctx.log.error({error, blockNumber: log.block.height, blockHash: log.block.hash, lensProtocolAddress}, `unable to decode event "${log.topics[0]}"`)
-    }
-}
+import {Post, Comment, PublicationVariant, PublicationRef, Profile, Collect, ProfileTransfer, ProfileImageUpdate} from '../../model'
+import {fetchContentBatch} from '../ipfs'
+import {removeBrokenSurrogate} from '../utils'
 
 
 export async function mergeData(ctx: DataHandlerContext<Store>) {
@@ -151,6 +25,11 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         ...transferedProfiles.map(x => x.profileId)
     ]
     const pubIds: string[] = []
+
+    // get addresses with timestamp
+
+    const profileToAddressMap = new Map<string, [Date, Profile][]>()
+    const profileAddresses: string[] = []
 
     for (let pubData of createdPublications) {
         switch (pubData.variant) {
@@ -178,22 +57,29 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         profileIds.push(collectData.rootProfileId)
         pubIds.push(collectData.pubId)
         pubIds.push(collectData.rootPubId)
+        profileAddresses.push(collectData.nftOwnerAddress)
     }
 
     // load entities using gathered ids
 
     const storeProfilesByID = await ctx.store.findBy(Profile, {id: In(profileIds)})
+    const storeProfilesByAddress = await ctx.store.findBy(Profile, {address: In(profileAddresses)})
+    const storePubsByID = await ctx.store.findBy(PublicationRef, {id: In(pubIds)})
+
     const profilesByID: Map<string, Profile> = new Map(
         storeProfilesByID.map((profile) => [profile.id, profile])
     )
-    const profiles = new Map([
-        ...profilesByID,
-    ])
-
-    const storePubsByID = await ctx.store.findBy(PublicationRef, {id: In(pubIds)})
+    const profilesByAddress: Map<string, Profile> = new Map(
+        storeProfilesByAddress.map((profile) => [profile.id, profile])
+    )
     const pubsByID: Map<string, PublicationRef> = new Map(
         storePubsByID.map((pub) => [pub.id, pub])
     )
+
+    const profiles = new Map([
+        ...profilesByID,
+        ...profilesByAddress
+    ])
     const pubs = new Map([
         ...pubsByID,
     ])
@@ -204,7 +90,21 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         profiles.set(profileEntity.id, profileEntity)
     }
 
-    profiles.forEach(x => NamedEntityBuffer.add('Save', x))
+    function addToAddresToProfileToMap(profileEntity: Profile) {
+        if (profileAddresses.includes(profileEntity.address)) {
+            let addresses = profileToAddressMap.get(profileEntity.address)
+            if (addresses === undefined) {
+                addresses = [] as [Date, Profile][]
+            }
+            addresses.push([profileEntity.updatedAt, profileEntity])
+            profileToAddressMap.set(profileEntity.address, addresses)
+        }
+    }
+
+    for (let profileEntity of profiles.values()) {
+        NamedEntityBuffer.add('Save', profileEntity)
+        addToAddresToProfileToMap(profileEntity)
+    }
 
     for (let profileImageUpdate of updatedProfileImages) {
         let profileEntity = profiles.get(profileImageUpdate.profileId)
@@ -242,6 +142,7 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
         transferedProfileEntity.address = profileTransfer.to
         transferedProfileEntity.updatedAt = profileTransfer.timestamp
         NamedEntityBuffer.add('Save', profileTransferEntity)
+        addToAddresToProfileToMap(transferedProfileEntity)
     }
 
     // update publications
@@ -361,9 +262,20 @@ export async function mergeData(ctx: DataHandlerContext<Store>) {
             ctx.log.warn(`collected root publication for collect is missing, collect: ${JSON.stringify(collectData)}`)
             continue
         }
+
+        let collectorEntity: Profile | undefined = undefined
+        let entities = profileToAddressMap.get(collectData.nftOwnerAddress)
+        if (entities != null)
+            for (let [timestamp, profileEntity] of entities.sort((a, b) => (a[0] > b[0] ? 1 : -1))) {
+                if (timestamp < collectData.timestamp) {
+                    collectorEntity = profileEntity
+                }
+            }
+
         let collectEntity = new Collect({
             id: collectData.id,
-            collector: collectData.collector,
+            nftOwnerAddress: collectData.nftOwnerAddress,
+            collector: collectorEntity,
             collectedCreator: commentedProfileEntity,
             collectedPublication: collectedPubEntity,
             collectedRootCreator: commentedRootProfileEntity,
