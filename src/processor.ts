@@ -2,7 +2,7 @@ import {EvmBatchProcessor, EvmBatchProcessorFields, BlockHeader, Log as _Log, Tr
 import {lookupArchive} from '@subsquid/archive-registry'
 import * as lensAbi from './abi/Lens'
 import * as lensHubAbi from './abi/LensHub'
-import {lensProtocolAddress} from './mapping/lens/parse'
+import {lensProtocolAddress} from './mapping/lens'
 
 
 export const processor = new EvmBatchProcessor()

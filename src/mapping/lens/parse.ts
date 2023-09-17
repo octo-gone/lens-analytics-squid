@@ -7,7 +7,7 @@ import {Log} from '../../processor'
 import {ProfileImageUpdateData, PublicationData, CollectData, ProfileTransferData} from '../types'
 import {Mirror, Post, Comment, PublicationVariant, Profile, Follow} from '../../model'
 import {toID, toDate} from '../utils'
-import { lensProtocolAddress } from '.'
+import {lensProtocolAddress} from '.'
 
 
 export function parseEvent(ctx: DataHandlerContext<Store>, log: Log) {
